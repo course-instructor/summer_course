@@ -1,6 +1,6 @@
     #include <stdio.h>
 
-
+// This function counts the number of common 1 bits in two unsigned long integers.
     unsigned long countBits(unsigned long commonBits)
     {
         int returnValue = 0;
