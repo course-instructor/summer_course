@@ -1,1 +1,1 @@
-splitTextToLines
+#include <stdio.h>
