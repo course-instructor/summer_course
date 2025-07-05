@@ -4,7 +4,7 @@
 #include "stack.h"
 
 #define BRACKET_TYPE_NUM 3
-#define QUOTATIONS_NUM 2
+#define QUOTATIONS_NUM 2  
 #define EOD '\0'
 int isTextBalanced(char * text);
 void printBalancedText(char * src_text);
@@ -24,14 +24,13 @@ int main()
 void balanced(void){
     char text[100] = "";
     char lines[100][100];
-    int line_count = getInput(lines);
-    int getInput(char lines[100][100]);
+    int line_count; 
     int i;
     printf("Hello!\n");
     printf("Today we gonna check if you know how to close brackets!!11!!!!\n");
     printf("input text and this program will tell if your text is balanced or not!\n");
     printf("Don't forget - you can enter multiple lines (press ctrl+d when you done writing)\n");
-    
+    line_count = getInput(lines);
     for (i = 0; i < line_count; i++) /* for each line of text */
     {
       printBalancedText(lines[i]); /* print if balanced or unbalanced */
