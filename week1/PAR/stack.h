@@ -2,14 +2,11 @@
 
 #define MAX_SIZE 100
 
-typedef struct Stack {
-    int arr[MAX_SIZE];
-    int top;
-} Stack;
+typedef struct stack_t stack_t;
 
-void initialize(Stack *stack);
-int isEmpty(Stack *stack);
-int isFull(Stack *stack);
-void push(Stack *stack, int value);
-int pop(Stack *stack);
-int peek(Stack *stack);
+void stack_initialize(stack_t *stack);
+int stack_isEmpty(stack_t *stack);
+int stack_isFull(stack_t *stack);
+void stack_push(stack_t *stack, int value);
+int stack_pop(stack_t *stack);
+int stack_peek(stack_t *stack);

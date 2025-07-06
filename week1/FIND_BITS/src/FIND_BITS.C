@@ -1,53 +1,49 @@
     #include <stdio.h>
 
-// This function counts the number of common 1 bits in two unsigned long integers.
-    unsigned long countBits(unsigned long commonBits)
+    unsigned long countBits(unsigned long comon_bits)
     {
-        int returnValue = 0;
-        if(commonBits != 0)
+        /**
+         * @brief this function counts the number of bits in an unsigend integer and prints it in binary from its first 1 bit.
+         * @param comon_bits: the unsigned long integer to count the bits of.
+         * @return: the number of 1 bits in the unsigned long integer.
+         */
+        int return_value = 0;
+        if(comon_bits != 0)
         {
-            returnValue = countBits(commonBits / 2);
-            if(commonBits % 2)
+            return_value = countBits(comon_bits >> 1);
+            if(comon_bits & 1)
             {
                 printf("1");
-                returnValue++;
+                return_value++;
             }
             else
             {
                 printf("0");
             }
         }
-        return returnValue;        
+        return return_value;        
     }
     
 
     int main()
     {
         /**
-         * This program counts how many common 1 bits two unsigned long integers have.
-         * 
-         * var x: The first unsigned long integer input by the user.
-         * var y: The second unsigned long integer input by the user.
-         * 
-         * type x: unsigned long
-         * type y: unsigned long
-         * 
-         * return: Prints the number of common 1 bits between x and y.
-         * rtype: int
+         * @brief this program counts how many common 1 bits two unsigned long integers have and prints where each common bit is. 
          */
+        
 
-        unsigned long x;
-        unsigned long y;
+        unsigned long x; // the first unsigned long integer
+        unsigned long y; // the second unsigned long integer
 
         printf("Enter an unsigened long x and y to count how many common 1 bits they have:\n");
         scanf("%lu %lu", &x, &y);
-        unsigned long commonBits = x & y; 
+        unsigned long comon_bits = x & y; 
         
         
         printf("the common bits of x and y:\t");
-        if (!commonBits) // ensure that there is still a print even if there are no common on bits
+        if (!comon_bits) // ensure that there is still a print even if there are no common on bits
             printf("0");
-        unsigned long count = countBits(commonBits);
+        unsigned long count = countBits(comon_bits);
         printf("\n");    
         printf("x and y share %lu common 1 bits.\n", count);
         return 0;

@@ -17,14 +17,12 @@ const char* numbs[] =
 char * exchange(int num)
 {
     /**
-     * the function converts a number from 0 to 99 to its string representation
-     * 
-     * var num: the number to convert
-     * var type: int
-     * 
-     * returns: a pointer to a string that contains the number in words
-     * rtype: char * (string)
-    */
+     *  @brief the function converts a number under 100 to english words
+        @param num the number to convert (between 0 and 99)
+        @return the converted number as a string
+     * */
+    
+
     char * ret ;
 
     char buffer[50];
@@ -75,33 +73,21 @@ char * exchange(int num)
 }
 
 
+
 void error(const char *msg)
 {
     /**
-     * the function prints an error message to stderr
-     * 
-     * var msg: the error message to print
-     * var type: const char *
-     * 
-     * returns: void
-    */
+     * @brief the function prints an error message to stderr
+     * @param msg the error message to print
+     */
+
+
+    
     fprintf(stderr, "Error: %s\n", msg);
 }
 
 void file_handle(FILE * inp_file, FILE * out_file)
 {
-    /**
-     * the function handles the input file and output file (even if the output file is NULL or input is stdin)
-     * it reads from the file char by char and converts every number and writes it to the correct output
-     * 
-     * var inp_file: the input file to read from (can be stdin)
-     * var out_file: the output file to write to (can be NULL)
-     * 
-     * type inp_file: FILE *
-     * type out_file: FILE *
-     * 
-     * returns: void
-     */
 
     char last_char = ' '; // Variable to hold the last character read from the file
 
@@ -109,7 +95,7 @@ void file_handle(FILE * inp_file, FILE * out_file)
 
     int number_to_convert = 0; // stores the current number that gets converted
 
-    int index = 0; // index for the current char
+    int current_index = 0; // index for the current char
 
     
 
@@ -167,20 +153,13 @@ void file_handle(FILE * inp_file, FILE * out_file)
 
 void numbers(int argc, char *argv[])
 {
+
     /**
-     *  the function handles from where the input comes and where the output goes based on the arguments:
-     *  if there are no arguments it reads from stdin and outputs to stdout
-     *  if there is one argument it reads from the file and outputs to stdout
-     *  if there are two arguments it reads from the first file and outputs to the second file
-     * 
-     *  var argc: the number of arguments passed to the program
-     *  var argv: the arguments passed to the program
-     * 
-     *  type argc: int
-     *  type argv: char ** (array of strings)
-     * 
-     *  returns: void
+     * @brief the function handles the input and output of the program based on the arguments and where should it go
+     * @param argc the number of arguments passed to the program
+     * @param argv arguments passed to the program
      */
+
 
 
     FILE * inp_file = NULL; // Pointer for input file

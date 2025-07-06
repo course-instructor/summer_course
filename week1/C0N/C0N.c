@@ -1,70 +1,59 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define ARR_LENGTH 80
+#define G_ARR_LENGTH 80
 
-void contract(char s1[], char s2[])
+void contract(char input_string[], char output_string[])
 {
     /**
-     * the function gets 2 strings and formats the first string so that every 
-     * sequence of following letters or numbers longer than 2 is reformated into the first char "-" the last char of the sequence.
-     * and then stores the result in the second string.
-     * 
-     * var s1: the first string that is being formatted. (read not changed)
-     * var s2: the second string that will contain the result of the formatting.
-     * 
-     * s1 type: char[] (string)
-     * s2 type: char[] (string)
-     * 
-     * return: writes the frmated first string into the second.
-     * rtype: void
-    */
-    int s2_index = 0; 
-    int i = 0; // index of the current char that is being red from s1
-    int j; // index of the end of the current sequence of following chars with ascending ascii values
+     * @brief the function  gets 2 strings it reads from the first and rewrites it to the second after reformating
+     * @param input_string the first string that is being formatted. (read not changed)
+     * @param output_string the second string that will contain the result of the formatting.
+     */
+    
+    int output_string_index = 0; 
+    int input_string_index = 0; // index of the current char that is being red from input_string
+    int sequence_end_index; // index of the end of the current sequence of following chars with ascending ascii values
    
-    while ( (i < ARR_LENGTH) && (s1[i] != '\0'))
+    for(input_string_index = 0; (input_string_index < G_ARR_LENGTH) && (input_string[input_string_index] != '\0'); input_string_index++)
     {
-        j = i;
-        while((j + 1 < ARR_LENGTH) && ( s1[j] + 1 ==   s1[j + 1]) && (isdigit(s1[j + 1]) || isalpha(s1[j + 1])))
+        for(sequence_end_index = input_string_index; (sequence_end_index + 1 < G_ARR_LENGTH) && ( input_string[sequence_end_index] + 1 ==   input_string[sequence_end_index + 1]) && (isdigit(input_string[sequence_end_index + 1]) || isalpha(input_string[sequence_end_index + 1])); sequence_end_index++)
         {
-            j++;
+            // do nothing, just find the end of the sequence
         }
         
-        if(j - i > 1) // the length of the sequence is more than 3
+        if(sequence_end_index - input_string_index > 1) // the length of the sequence is more than 3
         {
-            s2[s2_index++] = s1[i]; //first char in the sequence
-            s2[s2_index++] = '-';
-            s2[s2_index++] = s1[j]; // last char in the sequence
-            i = j;
+            output_string[output_string_index++] = input_string[input_string_index]; //first char in the sequence
+            output_string[output_string_index++] = '-';
+            output_string[output_string_index++] = input_string[sequence_end_index]; // last char in the sequence
+            input_string_index = sequence_end_index;
         }
         else
         {
-            s2[s2_index++] = s1[i];
+            output_string[output_string_index++] = input_string[input_string_index];
         }
-        i++;
+        input_string_index++;
     }
-
 
 }
 
 int main()
 {
     /**
-    get a line of input from the user using fgets
-    call a reformating function on the input
-    print the before and afater    
-    */
-    char s1 [ARR_LENGTH]; 
-    char s2 [ARR_LENGTH];
+     * @brief this program gets a line of input from the user and reformats it using the contract function.
+     */
+    
+    char input_string [G_ARR_LENGTH]; 
+    char output_string [G_ARR_LENGTH];
 
 
     printf("please enter a line of input (up to 80 chars)\n");
-    fgets(s1,ARR_LENGTH, stdin); // get user input
+    fgets(input_string,G_ARR_LENGTH, stdin); // get user input
     printf("your input:\n");
-    printf("%s", s1);
-    contract(s1, s2); 
+    printf("%s", input_string);
+    contract(input_string, output_string); 
     printf("\nafter reformating:\n");
-    printf("%s", s2);
+    printf("%s", output_string);
     return 0;
 }
