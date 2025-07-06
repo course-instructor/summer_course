@@ -1,72 +1,72 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-// Define the maximim capacity of the stack
+/* Define the maximim capacity of the stack */
 #define MAX_SIZE 100
 
-// Define a structure for the stack
+/* Define a structure for the stack */
 typedef struct {
-    // Array to store stack elements
+    /* Array to store stack elements */
     int arr[MAX_SIZE];  
-    // Index of the top element in the stack
+    /* Index of the top element in the stack */
     int top;        
 } Stack;
 
-// Function to initialize the stack
+/* Function to initialize the stack */
 void initialize(Stack *stack) {
-    // Set top index to -1 to indicate an empty stack
+    /* Set top index to -1 to indicate an empty stack */
     stack->top = -1;  
 }
 
-// Function to check if the stack is empty
+/* Function to check if the stack is empty */
 bool isEmpty(Stack *stack) {
-    // If top is -1, the stack is empty
+    /* If top is -1, the stack is empty */
     return stack->top == -1;  
 }
 
-// Function to check if the stack is full
+/* Function to check if the stack is full */
 bool isFull(Stack *stack) {
-    // If top is MAX_SIZE - 1, the stack is full
+    /* If top is MAX_SIZE - 1, the stack is full */
     return stack->top == MAX_SIZE - 1;  
 }
 
-// Function to push an element onto the stack
+/* Function to push an element onto the stack */
 void push(Stack *stack, int value) {
-    // Check for stack overflow
+    /* Check for stack overflow */
     if (isFull(stack)) {
         printf("Stack Overflow\n");
         return;
     }
-    // Increment top and add the value to the top of the stack
+    /* Increment top and add the value to the top of the stack */
     stack->arr[++stack->top] = value;
     
 }
 
-// Function to pop an element from the stack
+/* Function to pop an element from the stack */
 int pop(Stack *stack) {
-    // Check for stack underflow
+    /* Check for stack underflow */
     if (isEmpty(stack)) {
         printf("Stack Underflow\n");
         return -1;
     }
-    // Return the top element 
+    /* Return the top element */ 
     int popped = stack->arr[stack->top];
-    // decrement top pointer
+    /* decrement top pointer */
     stack->top--;
     
-    // return the popped element
+    /* return the popped element */
     return popped;
     
 }
 
-// Function to peek the top element of the stack
+/* Function to peek the top element of the stack */
 int peek(Stack *stack) {
-    // Check if the stack is empty
+    /* Check if the stack is empty */
     if (isEmpty(stack)) {
         
         return -1;
     }
-    // Return the top element without removing it
+    /* Return the top element without removing it */
     return stack->arr[stack->top];
 }
 void print_balanced()
@@ -89,6 +89,8 @@ void print_line(char *line)
  */
 int check_line(char *line)
 {
+    int retval = 1; /* assume balanced */
+
     print_line(line);
 
     char letter;
@@ -96,131 +98,138 @@ int check_line(char *line)
     initialize(&closers);
     int char_in_line;
 
-    for(char_in_line = 0; line[char_in_line]!='\n' && line[char_in_line]!='\0'; char_in_line++)//we are running till the end of the line
+    for (char_in_line = 0; line[char_in_line] != '\n' && line[char_in_line] != '\0'; char_in_line++)
     {
         letter = line[char_in_line];
-        if(letter == '(' || letter == '{' || letter == '[')
+        if (letter == '(' || letter == '{' || letter == '[')
         {
-            push(&closers, letter);// if there is an pener we want to push it to the stack so we can check if the next closer is the same type
+            push(&closers, letter);
         }
-        else if(letter == ')' || letter == '}'|| letter == ']')
+        else if (letter == ')' || letter == '}' || letter == ']')
         {
-            if (isEmpty(&closers)) 
+            if (isEmpty(&closers))
             {
-                print_not_balanced();// if on the top of the stack there is no opener of the same type its not balanced
-                return 0;
+                print_not_balanced();
+                retval = 0;
+                break;
             }
             char check = peek(&closers);
-            if((letter == ')' && check == '(') ||
-               (letter == ']' && check == '[') ||
-               (letter == '}' && check == '{'))
+            if ((letter == ')' && check == '(') ||
+                (letter == ']' && check == '[') ||
+                (letter == '}' && check == '{'))
             {
-                pop(&closers);//if the closer is the same type of opener that is in the top of the stack its fine and we remove it
+                pop(&closers);
             }
             else
             {
                 print_not_balanced();
-                return 0;
+                retval = 0;
+                break;
             }
         }
-        else if(letter == '"')// we want to ignore the strings 
+        else if (letter == '"')
         {
             char_in_line++;
-            while (line[char_in_line]!='"')
+            while (line[char_in_line] != '"' && line[char_in_line] != '\0')
             {
-                char_in_line++;//moving till we are out of the string 
+                char_in_line++;
             }
         }
-        else if(letter == '/' && line[char_in_line+1] == '*')// we want to ignore the comments
+        else if (letter == '/' && line[char_in_line + 1] == '*')
         {
-            char_in_line+=2;
-            while (!(line[char_in_line] == '*' && line[char_in_line+1] == '/'))
+            char_in_line += 2;
+            while (!(line[char_in_line] == '*' && line[char_in_line + 1] == '/') &&
+                   line[char_in_line] != '\0')
             {
-                char_in_line++;// moving till we are out of the comment
+                char_in_line++;
             }
-            
-            
+            char_in_line++; /* skip the '/' */
         }
     }
-    if(!isEmpty(&closers))// if there is any type of closer in the end of the line it means the line isnt balanced
+
+    if (retval == 1 && !isEmpty(&closers))
     {
         print_not_balanced();
-        return 0;
+        retval = 0;
     }
-    else//if the stack is empty it means the line is balanced
+
+    if (retval == 1)
     {
         print_balanced();
-        return 1;
     }
+
+    return retval;
 }
+
 
 /**
  * @brief the function checks if the whole string as a unit is balanced
  * 
  * @return it prints if the whole string is balanced or not
  */
-int check_full_string()
+int check_full_string(void)
 {
+    int char_in_string;
+    int retval = 0; /* assume not balanced until proven balanced */
     char string[MAX_SIZE];
     Stack closers_whole_text;
     initialize(&closers_whole_text);
 
-    while (fgets(string, MAX_SIZE, stdin) != NULL) // we want to read until the end
+    while (fgets(string, MAX_SIZE, stdin) != NULL)
     {
-        check_line(string);// for each line we will check if the line for itself is balanced or not
+        check_line(string);
 
-        for (int char_in_string = 0; string[char_in_string] != '\0'; char_in_string++)//moving on the whole string
-         {
+        for ( char_in_string = 0; string[char_in_string] != '\0'; char_in_string++)
+        {
             char letter = string[char_in_string];
-            if(letter == '(' || letter == '{' || letter == '[') 
+            if (letter == '(' || letter == '{' || letter == '[')
             {
-                push(&closers_whole_text, letter);// if we see an opener we want to push it to the stack to compare it to the next closer we will see
+                push(&closers_whole_text, letter);
             }
-            else if(letter == ')' || letter == '}'|| letter == ']') // if we see the other type of opener in the top of the stack its not balanced,else we continue to check
+            else if (letter == ')' || letter == '}' || letter == ']')
             {
                 char check = peek(&closers_whole_text);
-                if(letter == check+1 || letter == check+2) 
+                if (letter == check + 1 || letter == check + 2)
                 {
                     pop(&closers_whole_text);
                 }
-                else 
+                else
                 {
                     printf("The whole text is not balanced!! :(\n");
-                    return 0;
+                    retval = 1;
+                    goto done;
                 }
             }
-            else if(letter == '"')// we want to ignore strings
-        {
-            char_in_string++;
-            while (string[char_in_string]!='"')
+            else if (letter == '"')
             {
                 char_in_string++;
+                while (string[char_in_string] != '"' && string[char_in_string] != '\0')
+                {
+                    char_in_string++;
+                }
             }
         }
-        
-
-        }
     }
 
-    if (!isEmpty(&closers_whole_text))// if there is any type of closer in the end of the line it means the line isnt balanced
+    if (!isEmpty(&closers_whole_text))
     {
         printf("The whole text is not balanced!! :(\n");
-        return 0;
-    } 
-    else //if the stack is empty it means the line is balanced
+        retval = 1;
+    }
+    else
     {
         printf("The whole text is balanced!! :)\n");
-        return 0;
     }
+
+done:
+    return retval;
 }
+
 
 
 int main(void)
 {
-    check_full_string();
-
+    int retval = 0;
+    retval = check_full_string();
+    return retval;
 }
-
-
-
-
