@@ -4,36 +4,53 @@
 #define ASCII_DIFF 1
 #define MAX_LEN 80
 
-/**
+/*
  *  Compresses sequences of consecutive characters (like abc) to a short form (a-c).
  *
  *  input The original string.
  *  updating the requested array
  */
-void contract(const char input[], char output[])
+int contract(const char input[], char output[])
 {
-    int input_index = 0;
-    int output_index = 0;
+    int retval = 0;
+    int read_idx = 0;
+    int write_idx = 0;
 
-    while (input[input_index] != '\0')// while we are not in the end
+    /* check if input is empty */
+    if (input[0] == '\0')
     {
-        if (input[input_index + 1] - input[input_index] == ASCII_DIFF &&
-            input[input_index + 2] - input[input_index + 1] == ASCII_DIFF)//if there is a sequence of 3 values
-        {
-            output[output_index++] = input[input_index++];
-            while (input[input_index + 1] - input[input_index] == ASCII_DIFF)
-                input_index++;//moving until the sequence is over
-            output[output_index++] = '-';
-            output[output_index++] = input[input_index++];//copying the final char of the sequence
-        }
-        else
-        {
-            output[output_index++] = input[input_index++];//copying any other char that is not in a sequence
-        }
+        retval = 1; /* error code */
     }
-    output[output_index] = '\0';
+    else
+    {
+        while (input[read_idx] != '\0') /* while we are not in the end */
+        {
+            if(input[read_idx + 1]  != '\0' && input[read_idx+2] != '\0')
+            {
+                if (input[read_idx + 1] - input[read_idx] == ASCII_DIFF &&
+                    input[read_idx + 2] - input[read_idx + 1] == ASCII_DIFF) /* if there is a sequence of 3 values */
+                {
+                    output[write_idx++] = input[read_idx++];
+                    while (input[read_idx + 1] - input[read_idx] == ASCII_DIFF)
+                    {
+                        read_idx++; /* moving until the sequence is over */
+                    }
+                        
+                    output[write_idx++] = '-';
+                    output[write_idx++] = input[read_idx++]; /* copying the final char of the sequence */
+                    continue;
+                }
+            }
+            
+            output[write_idx++] = input[read_idx++]; /* copying any other char that is not in a sequence */
+        }
+        output[write_idx] = '\0';
+    }
+
+    return retval;
 }
-/**
+
+/*
  *  input The original string.
  *  printing the shorted string
  * 
@@ -46,14 +63,27 @@ int main()
 {
     char input[MAX_LEN];
     char shorted[MAX_LEN];
+    int retval = 0;
 
     printf("Please enter your sequence:\n");
-    fgets(input, MAX_LEN, stdin);
+    if (fgets(input, MAX_LEN, stdin) == NULL)
+    {
+        retval = 1;
+    }
+    else
+    {
+        retval = contract(input, shorted);
 
-    contract(input, shorted);
+        if (retval == 0)
+        {
+            printf("The original input was:\n%s\n", input);
+            printf("The shorted string is:\n%s\n", shorted);
+        }
+        else
+        {
+            printf("Error processing the input.\n");
+        }
+    }
 
-    printf("The original input was:\n%s\n", input);
-    printf("The shorted string is:\n%s\n", shorted);
-
-    return 0;
+    return retval;
 }
