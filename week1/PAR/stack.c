@@ -16,13 +16,13 @@ void stack_initialize(stack_t *stack) {
 }
 
 // Function to check if the stack is empty
-int stack_isEmpty(stack_t *stack) {
+int stack_is_empty(stack_t *stack) {
     // If top is -1, the stack is empty
     return stack->top == -1;  
 }
 
 // Function to check if the stack is full
-int stack_isFull(stack_t *stack) {
+int stack_is_full(stack_t *stack) {
     // If top is MAX_SIZE - 1, the stack is full
     return stack->top == MAX_SIZE - 1;  
 }
@@ -30,7 +30,7 @@ int stack_isFull(stack_t *stack) {
 // Function to push an element onto the stack
 void stack_push(stack_t *stack, int value) {
     // Check for stack overflow
-    if (stack_isFull(stack)) {
+    if (stack_is_full(stack)) {
 // /        printf("Stack Overflow\n");
         return;
     }
@@ -42,7 +42,7 @@ void stack_push(stack_t *stack, int value) {
 // Function to pop an element from the stack
 int stack_pop(stack_t *stack) {
     // Check for stack underflow
-    if (stack_isEmpty(stack)) {
+    if (stack_is_empty(stack)) {
         // printf("Stack Underflow\n");
         return -1;
     }
@@ -58,7 +58,7 @@ int stack_pop(stack_t *stack) {
 // Function to peek the top element of the stack
 int stack_peek(stack_t *stack) {
     // Check if the stack is empty
-    if (stack_isEmpty(stack)) {
+    if (stack_is_empty(stack)) {
         // printf("Stack is empty\n");
         return -1;
     }

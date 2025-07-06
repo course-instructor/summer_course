@@ -1,6 +1,6 @@
     #include <stdio.h>
 
-    unsigned long countBits(unsigned long comon_bits)
+    unsigned long count_bits(unsigned long comon_bits)
     {
         /**
          * @brief this function counts the number of bits in an unsigend integer and prints it in binary from its first 1 bit.
@@ -10,7 +10,7 @@
         int return_value = 0;
         if(comon_bits != 0)
         {
-            return_value = countBits(comon_bits >> 1);
+            return_value = count_bits(comon_bits >> 1);
             if(comon_bits & 1)
             {
                 printf("1");
@@ -43,7 +43,7 @@
         printf("the common bits of x and y:\t");
         if (!comon_bits) // ensure that there is still a print even if there are no common on bits
             printf("0");
-        unsigned long count = countBits(comon_bits);
+        unsigned long count = count_bits(comon_bits);
         printf("\n");    
         printf("x and y share %lu common 1 bits.\n", count);
         return 0;

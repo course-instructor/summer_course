@@ -3,6 +3,9 @@
 
 #include "stack.h"
 
+
+#define MAX_SIZE 100
+
 const char G_SPETIAL_CHARS[][2] = /* define the different spetial chars with an array of arrais
 so that in each one the first char is the opening and the second is the corresponding closing */
 
@@ -10,6 +13,11 @@ so that in each one the first char is the opening and the second is the correspo
     {'{', '}'},
     {'[', ']'},
     {'(', ')'},
+};
+
+enum e_spetial_char
+{
+    REGULAR, OPENING, CLOSING
 };
 
 int is_closing(char c, char top)
@@ -22,45 +30,41 @@ int is_closing(char c, char top)
      */
     
     int ret = 0; // return value
-    int index = 0; // index to loop through the special chars array
 
-    while((index < 3) && ret == 0)
+    for(int index = 0; index < 3 && ret == 0; index++)
     {
         if (c == G_SPETIAL_CHARS[index][1] && top == G_SPETIAL_CHARS[index][0]) // check if c is a closing char for the top
         {
             ret = 1; // return true if c is a closing char for top
         }
-        index++; // move to the next pair of special chars
     }
     return ret;
 }
 
 
 
-int in_spetial(char c)
+enum e_spetial_char in_spetial(char c)
 {
     /**
      * @brief the function checks if the input c is one of the special characters
      * @param c the char to check if its a special char
-     * @return 1 if c is an opening char, 2 if c is a closing char, 0 if c is not a special char
+     * @return e_spetial_char to know wheather the char is closing opening or regular
      */
     
 
-    int index = 0; // index to loop through the special chars array
-    int ret = 0; // return value
+    enum e_spetial_char ret = REGULAR; // return value
 
-    while((index < 3) && ret == 0)// loop through the special chars array
+    for(int index = 0; index < 3 && ret == REGULAR; index++)
     {
         if (c == G_SPETIAL_CHARS[index][0]) // check if c is an opening char
         {
-            ret = 1; // return 1 if c is an opening char
+            ret = OPENING; // return 1 if c is an opening char
         }
         else if (c == G_SPETIAL_CHARS[index][1]) // check if c is a closing char
         {
-            ret = 2; // return 2 if c is a closing char
+            ret = CLOSING; // return 2 if c is a closing char
 
         }
-        index++; // move to the next pair of special chars
     }
     return ret; 
 }
@@ -114,12 +118,12 @@ int check_segment(char inp_string [])
         }
         else // if not inside a string or comment
         {
-            int is_spetial = in_spetial(inp_string[index]); // check if the next char is a special char
-            if (is_spetial == 1)// check if the next char is an opening char
+            enum e_spetial_char  is_spetial = in_spetial(inp_string[index]); // check if the next char is a special char
+            if (is_spetial == OPENING)// check if the next char is an opening char
             {
                 stack_push(stack, inp_string[index]); // push the opening char to the stack
             }
-            else if (is_spetial == 2) // check if the next char is a closing char
+            else if (is_spetial == CLOSING) // check if the next char is a closing char
             {
                 if(is_closing(inp_string[index], top)) // check if the closing char is closing the parenthesis at the top of the stack
                 {
@@ -140,7 +144,7 @@ int check_segment(char inp_string [])
     }
 
 
-    return (ret && stack_isEmpty(stack)); // return 1 if both the stack is empty and there weren't any problems detected in the loop
+    return (ret && stack_is_empty(stack)); // return 1 if both the stack is empty and there weren't any problems detected in the loop
 }
 
 void par(void)
@@ -149,8 +153,8 @@ void par(void)
      * @brief the function reads a text from the user and checks for parcing problems in it
      */
     
-    char inp_string[100]; // string to hold the input text
-    char line[100]; //string to hold each line of the input
+    char inp_string[MAX_SIZE]; // string to hold the input text
+    char line[MAX_SIZE]; //string to hold each line of the input
     // printf("enter a text to check for parcing problems (up to 100 chars):\n");
 
     int index = 0; // index to loop through the string

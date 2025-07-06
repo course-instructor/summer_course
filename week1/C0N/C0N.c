@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define G_ARR_LENGTH 80
+#define ARR_LENGTH 80
 
 void contract(char input_string[], char output_string[])
 {

@@ -2,8 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define NUM_LITERAL_STRING_MAX_LEN 50
 
-const char* numbs[] =
+const char* g_numbers_as_words[] =
 {
     "zero", "one", "two", "three", "four",
     "five", "six", "seven", "eight", "nine",
@@ -14,7 +15,7 @@ const char* numbs[] =
 
 
 
-char * exchange(int num)
+char * convert_num_to_literal_string(int num)
 {
     /**
      *  @brief the function converts a number under 100 to english words
@@ -23,16 +24,15 @@ char * exchange(int num)
      * */
     
 
-    char * ret ;
 
-    char buffer[50];
+    static char buffer[NUM_LITERAL_STRING_MAX_LEN]; //static so that u can return its pointer and use it outside the function
     buffer[0] = '\0'; // Initialize buffer 
 
 
 
     if(num < 16 )   
     {
-        snprintf(buffer, sizeof(buffer), "%s", numbs[num]);
+        snprintf(buffer, sizeof(buffer), "%s", g_numbers_as_words[num]);
     }
 
     else if (num < 20)
@@ -43,33 +43,45 @@ char * exchange(int num)
         }
         else
         {
-            snprintf(buffer, sizeof(buffer), "%s%s", numbs[num - 10], "teen");
+            snprintf(buffer, sizeof(buffer), "%s%s", g_numbers_as_words[num - 10], "teen");
         }
     }
 
     else
     {
 
-        if(num / 10 < 6)
+        if(num < 60)
         {
-            snprintf(buffer, sizeof(buffer), "%s", numbs[num / 10 + 14]);
+            snprintf(buffer, sizeof(buffer), "%s", g_numbers_as_words[num / 10 + 14]); // the first name for the tens (not including ten) is at 15 so if u take the num / 10 and add 14 u get the name for it...
         }
         else
         {
-            snprintf(buffer, sizeof(buffer), "%s%s", numbs[num / 10], "ty");
+            if(num / 10 != 8)
+            {
+                snprintf(buffer, sizeof(buffer), "%s%s", g_numbers_as_words[num / 10], "ty");
+            }
+            else
+            {
+                snprintf(buffer, sizeof(buffer), "%s", "eighty");
+            }
+
         }
 
         if(num % 10 != 0)
         {
-            snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), " %s", numbs[num % 10]);
+            snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), " %s", g_numbers_as_words[num % 10]);
 
         }
     }
+    size_t len = strlen(buffer);
+    if (len + 1 < sizeof(buffer)) //add new line at the end
+    {
+        buffer[len] = '\n';
+        buffer[len + 1] = '\0';
+    }
 
-    ret = malloc(strlen(buffer) + 2); // Allocate memory for the buffer and add space for the new line char and null at the end
-    sprintf(ret, "%s\n", buffer); // copy the buffer to ret and add new line
 
-    return (ret);
+    return (buffer);
 }
 
 
@@ -86,8 +98,27 @@ void error(const char *msg)
     fprintf(stderr, "Error: %s\n", msg);
 }
 
+void convert_and_write(int number_to_convert, FILE * output)
+{
+    /**
+     * @brief the function 
+     * @param number_to_convert the nubmber to be converted to words
+     * @param output where should the converted numbers be writen 
+     */
+    char * out_str = convert_num_to_literal_string(number_to_convert); // Convert the number to words
+                
+
+    fwrite(out_str, sizeof(char), strlen(out_str), output); // Write the converted number to the output file
+
+}
+
 void file_handle(FILE * inp_file, FILE * out_file)
 {
+    /**
+     * @brief the function converts the content of the inp_file using the convert_and_write function
+     * @param inp_file a pointer to a file to read numbers from (can be a file or stdin)
+     * @param out_file a file pointer to where the converted numbers are writen if null the output will be to stdout
+     */
 
     char last_char = ' '; // Variable to hold the last character read from the file
 
@@ -95,29 +126,19 @@ void file_handle(FILE * inp_file, FILE * out_file)
 
     int number_to_convert = 0; // stores the current number that gets converted
 
-    int current_index = 0; // index for the current char
+    int digits_converted = 0; // index for the current char 
 
-    
+    FILE *output = out_file ? out_file : stdout; //output file
 
-    while ((last_char != EOF) && (last_char != '\n' || inp_file != stdin)) //check if the input has ended
+    while (last_char != EOF) //check if the input has ended
     {
-        if ((last_char == '\t' || last_char == ' ' || last_char == '\n') && index > 0)/// check if the last char is blank spaces and there was a nubmber 
+        if ((isspace(last_char)) && digits_converted > 0)/// check if the last char is blank spaces and there was a nubmber 
         {
 
-                out_str = exchange(number_to_convert); // Convert the number to words
-                
-                if(out_file) // Check if an output file is provided
-                {
-                    fwrite(out_str, sizeof(char), strlen(out_str), out_file); // Write the converted number to the output file
-                }
-                else // if output file isnt provided output to stdout
-                {
-                    printf("%s", out_str); // Print the converted number to stdout
-                }
+            convert_and_write(number_to_convert, output);
 
-                free(out_str); // Free the allocated memory for the converted number
-                number_to_convert = 0; // Reset the number for the next iteration
-                index = 0; // Reset the index for the next number
+            number_to_convert = 0; // Reset the number for the next iteration
+            digits_converted = 0; // Reset the index for the next number
         }
 
         else
@@ -126,26 +147,16 @@ void file_handle(FILE * inp_file, FILE * out_file)
             {
                 number_to_convert *= 10; // Shift the current number left
                 number_to_convert += last_char - '0'; // Convert the current char to int and add it to the number
-                index++; // Move to the next char in the buffer
+                digits_converted++; // Move to the next char in the buffer
             }
         }
 
         last_char = fgetc(inp_file); // get the next last char
     }
 
-    if (index > 0) // Check if there is a number left to convert that wasnt conveted because of the EOF that ended the loop
+    if (digits_converted > 0) // Check if there is a number left to convert that wasnt conveted because of the EOF that ended the loop without calling the convert_number_to_words function
     {
-        out_str = exchange(number_to_convert); // Convert the last number to words
-        
-        if(out_file) // Check if an output file is provided
-        {
-            fwrite(out_str, sizeof(char), strlen(out_str), out_file); // Write the last converted number to the output file
-        }
-        else // if output file isnt provided output to stdout
-        {
-            printf("%s", out_str); // Print the last converted number to stdout
-        }
-        free(out_str); // Free the allocated memory for the last converted number
+        convert_and_write(number_to_convert, output);
     }
     
 }
