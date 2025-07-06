@@ -13,4 +13,4 @@ run: find_bits
 valgrind: find_bits
 	valgrind --leak-check=full --track-origins=yes ./find_bits
 clean:
-	rm -f *.o find_bitsS
+	rm -f *.o find_bits
