@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <ctype.h>
+#include "NUMBERS.h"    
 #define NUM_OF_UNIQUE_NUMBER_WORDS 28
+#define MAX_WORD_LENGTH 13
 /*Array of each uniqe name for a number in english from 0 - 99*/
 static const char *number_names[NUM_OF_UNIQUE_NUMBER_WORDS] = {
-   "one",
    "zero",
+   "one",
    "two",
    "three",
    "four",
@@ -30,15 +33,11 @@ static const char *number_names[NUM_OF_UNIQUE_NUMBER_WORDS] = {
    "forty",
    "fifty",
    "sixty",
-   "seventy",
+   "seventy",   
    "eighty",
    "ninety"
 };
-void numberToWord(int num,char * word);
-void readFromInputFile(char * path);
-void printNumbers(char * line);
-void readFromUser(void);
-void numbers(int argc, char **argv);
+
 int main(int argc, char **argv)
 { 
     numbers(argc, argv);
@@ -49,75 +48,96 @@ int main(int argc, char **argv)
  */
 void numbers(int argc, char **argv)
 {
-    if(argc > 1) /*read file*/ 
+    FILE *file_read;
+    FILE *file_write;
+    
+    if(argc == 1) /*read file*/ 
     {
-        readFromInputFile(argv[1]);
-    }else{
-        readFromUser();
+        file_read = stdin;
+        file_write = stdout;
+        HandleInputOutput(file_read,file_write);
+    }
+    if(argc == 2) /*read file*/ 
+    {
+        file_read =fopen(argv[1],"r");
+        file_write = stdout;
+        HandleInputOutput(file_read,file_write);
+        fclose(file_read);
+    }
+    if(argc == 3)
+    {
+        file_read = fopen(argv[1],"r");
+        file_write =fopen(argv[2],"w");
+        HandleInputOutput(file_read,file_write);
+        fclose(file_read);
+        fclose(file_write);
+
     }
 
-
 }
 
 
 /**
- * readFromInputFile - gets numbers from file
- * @path - file path
- * 
+ * HandleInputOutput - gets numbers from file
+ * @file_read - read source
+ * @file_write - write dest
  */
-void readFromInputFile(char * path)
+void HandleInputOutput(FILE * file_read,FILE *file_write)
 {
+    char line[100];
+    if(file_read == NULL) 
+    {
+        printf("Erorr opening read file");
+        assert(1);
+    }   
+    if(file_read == NULL)
+    {
+        printf("Eroor opening write file");
+        assert(1);
+    }
+
+      
+    while(fgets(line,sizeof(line),file_read) != NULL)
+    {
+        printNumbers(line,file_write);
+    }
     
-    char line[100];
-
-    FILE *fptr = (FILE*)fopen(path, "r");
-        if(fptr== NULL){
-            printf("Could not find the file!\n");
-        }
-        else
-        {
-            while(fgets(line,sizeof(line),fptr) != NULL)
-            {
-                printNumbers(line);
-            }
-            fclose(fptr);
-        }
-
+    
 }
-/**
- * readFromUser - ask user input from command line
- */
-void readFromUser(void)
-{
-    char line[100];
-    fgets(line,sizeof(line),stdin);
-    printNumbers(line);  
-}
+
+
 
 /**
  * printNumbers - prints a line of numbers as words.
- * @line - string of numbers from 1-99
+ * line - string of numbers from 1-99
+ * output - file to write to
  */
-void printNumbers(char * line)
+void printNumbers(char * line,FILE * output)
 {
-    char *start = line;
-    char * next = start;
-    char number_word[30];
+    char * next_char = line;
+    char number_word[20];
+    unsigned int num;
     strcat(line, " ");
 
-    while(*next != '\0')
+    while(*next_char != '\0')
     {
-        if(*next == ' ' || *next == '\t' || *next =='\0') /*read while space or tab or end of line*/
-        {
-            *next = '\0';
-            numberToWord(atoi(start),number_word); /*number to word*/ 
-            printf("%s \n",number_word); 
-            start = ++next; /* go to the next number*/
 
+        if(isdigit(*next_char)) /*read while space or tab or end of line*/
+        {
+            num = *next_char - '0';
+            if(isdigit(*(next_char+1)))
+            {
+                num = num*10 + (*(++next_char)-'0');
+    
+            }
+
+            numberToWord(num,number_word); /*number to word*/ 
+            fprintf(output,"%s \n",number_word);
+            next_char++;
         }
         else
         {
-            next++;
+            next_char++;
         }
     }
 }
@@ -128,26 +148,28 @@ void printNumbers(char * line)
  */
 void numberToWord(int num,char * word)
 {
-    
     /*Word equals zero only when its the only digit in the number*/
     if(num == 0) 
     {
-        strcpy(word,number_names[num]);
+        snprintf(word,MAX_WORD_LENGTH,"%s",number_names[0]); /*snprintf is a safe*/
     }
     else
     {
         /*If the number between 1-20 the number values corresponds to the correct index in number_names */
         if(num<20) 
         {
-            strcpy(word,number_names[num]);
+            snprintf(word,MAX_WORD_LENGTH,"%s",number_names[num]);
         }
         else /*If the number is between is greater then 20*/
         {
-            strcpy(word,number_names[18 + num/10]); /*The index of the first word (tens) equals to value of the digit +18(for skipping the numbers between 1-20)*/
-            strcat(word , " "); /*Space between the words*/
             if(num%10 != 0)
             {
-                strcat(word, number_names[num % 10]); /*Get the world for the remining digit*/
+                snprintf(word,MAX_WORD_LENGTH,"%s %s",number_names[18 + num/10], number_names[num % 10]);
+                printf("A: %ld\n",sizeof(word));
+            }else
+            {
+                snprintf(word,MAX_WORD_LENGTH,"%s",number_names[18 + num/10]);
+
             }
         }
     }
