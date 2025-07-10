@@ -35,6 +35,11 @@ void get_set_members(int *char_index_pointer, char *line, set_t *set_ptr);
 void init_all_sets(void);
 int get_three_sets(set_t ** inp_sets_arr_pointer, int * char_index_pointer, char * line);
 
+/**
+ * @brief the function sends error messeges based on the value of the e error enum
+ * 
+ * @param e the error enum that gets its messege
+ */
 void error(enum e_errors e)
 {
     const char *errors[] = {
@@ -52,7 +57,11 @@ void error(enum e_errors e)
     printf("Error: %s\n", errors[e]);
 }
 
-
+/**
+ * @brief the function reads a line of input char by char ends it with '\0' allocates it and returns it...
+ * 
+ * @return char* the line of input that was red
+ */
 char *get_line(void)
 {
     int capacity = 10;
@@ -99,6 +108,18 @@ char *get_line(void)
     return str;
 }
 
+
+/**
+ * @brief the function get_set looks through a string from a certian index and finds a set, it reads char by char
+ * and it continues until the end of the line or the next text that isnt a blank space, it incriments the ponter 
+ * and it can detect some errors in reading like multiple commas, and also returns an enum that helps diagnose
+ * how it ended reading
+ * 
+ * @param char_index_pointer a pointer to the index from wich the fnction should start reading
+ * @param line a pointer to the start of the line from wich the function will read the set
+ * @param set_ptr_ptr a pointer to a pointer to a set in order to change the pointer of the set if is found
+ * @return enum e_ended_with an enum that shows how did the reading end 
+ */
 enum e_ended_with get_set(int * char_index_pointer, char * line, set_t * * set_ptr_ptr)
 {
     int start_index;
@@ -191,6 +212,16 @@ enum e_ended_with get_set(int * char_index_pointer, char * line, set_t * * set_p
     return (end_status);
 }
 
+
+/**
+ * @brief Get the three sets function is a template that uses the get_set function and is checking all of the error 
+ * that can ocur between the reading of each set like commas
+ * 
+ * @param inp_sets_arr_pointer a pointer to an array of sets that will get assigend sets (SETA - SETF) if there arent any errors
+ * @param char_index_pointer a pointer to the index from wich the fnction should start reading
+ * @param line a pointer to the start of the line from wich the function will read the set
+ * @return int returns wether there was an error or not (0 - no error, 1 - there was an error)
+ */
 int get_three_sets(set_t ** inp_sets_arr_pointer, int * char_index_pointer, char * line)
 {
 
@@ -246,6 +277,16 @@ void skip_spaces(int * char_index_pointer, char * line)
         (* char_index_pointer) ++;
     }
 }
+
+/**
+ * @brief Get the set members function reads set memers from a string (one line) by reading each char and
+ * adding each number to a temp set it checks for errors if there arent any it copys the temp set to the
+ * one that was sent to it
+ * 
+ * @param char_index_pointer a pointer to the index from wich the fnction should start reading
+ * @param line a pointer to the start of the line from wich the function will read the set
+ * @param set_ptr a pointer to the set that the caller wanted to add members to...
+ */
 
 void get_set_members(int * char_index_pointer, char * line, set_t * set_ptr)
 {
@@ -379,6 +420,11 @@ void get_set_members(int * char_index_pointer, char * line, set_t * set_ptr)
 
 }
 
+
+/**
+ * @brief the function initiates sets from SETA to SETF
+ * 
+ */
 void init_all_sets(void)
 {
     for (int i = 0; i < 6; i++)
@@ -388,6 +434,11 @@ void init_all_sets(void)
     
 }
 
+/**
+ * @brief this function reads the input and its main functionality is to read the action that the user wants
+ * to perform and then handeling the ending checks for the functions that dont read three sets (read_set, print_set)
+ * and calling the library logical functions if there were no errors detected
+ */
 void set_main()
 {
 
