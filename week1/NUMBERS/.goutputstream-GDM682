@@ -1,0 +1,215 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define NUM_LITERAL_STRING_MAX_LEN 50
+
+const char* g_numbers_as_words[] =
+{
+    "zero", "one", "two", "three", "four",
+    "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen",
+    "fifteen",
+    "twenty", "thirty", "forty", "fifty"
+};
+
+
+
+char * convert_num_to_literal_string(int num)
+{
+    /**
+     *  @brief the function converts a number under 100 to english words
+        @param num the number to convert (between 0 and 99)
+        @return the converted number as a string
+     * */
+    
+
+
+    static char buffer[NUM_LITERAL_STRING_MAX_LEN]; //static so that u can return its pointer and use it outside the function
+    buffer[0] = '\0'; // Initialize buffer 
+
+
+
+    if(num < 16 )   
+    {
+        snprintf(buffer, sizeof(buffer), "%s", g_numbers_as_words[num]);
+    }
+
+    else if (num < 20)
+    {
+        if(num == 18)
+        {
+            snprintf(buffer, sizeof(buffer), "%s", "eighteen");
+        }
+        else
+        {
+            snprintf(buffer, sizeof(buffer), "%s%s", g_numbers_as_words[num - 10], "teen");
+        }
+    }
+
+    else
+    {
+
+        if(num < 60)
+        {
+            snprintf(buffer, sizeof(buffer), "%s", g_numbers_as_words[num / 10 + 14]); // the first name for the tens (not including ten) is at 15 so if u take the num / 10 and add 14 u get the name for it...
+        }
+        else
+        {
+            if(num / 10 != 8)
+            {
+                snprintf(buffer, sizeof(buffer), "%s%s", g_numbers_as_words[num / 10], "ty");
+            }
+            else
+            {
+                snprintf(buffer, sizeof(buffer), "%s%s", "eighty");
+            }
+
+        }
+
+        if(num % 10 != 0)
+        {
+            snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), " %s", g_numbers_as_words[num % 10]);
+
+        }
+    }
+    size_t len = strlen(buffer);
+    if (len + 1 < sizeof(buffer)) //add new line at the end
+    {
+        buffer[len] = '\n';
+        buffer[len + 1] = '\0';
+    }
+
+
+    return (buffer);
+}
+
+
+
+void error(const char *msg)
+{
+    /**
+     * @brief the function prints an error message to stderr
+     * @param msg the error message to print
+     */
+
+
+    
+    fprintf(stderr, "Error: %s\n", msg);
+}
+
+void file_handle(FILE * inp_file, FILE * out_file)
+{
+
+    char last_char = ' '; // Variable to hold the last character read from the file
+
+    char * out_str = NULL; // Pointer to hold the converted number string
+
+    int number_to_convert = 0; // stores the current number that gets converted
+
+    int digits_converted = 0; // index for the current char 
+
+    
+
+    while ((last_char != EOF) ) //check if the input has ended
+    {
+        if ((last_char == '\t' || last_char == ' ' || last_char == '\n') && digits_converted > 0)/// check if the last char is blank spaces and there was a nubmber 
+        {
+
+                out_str = convert_num_to_literal_string(number_to_convert); // Convert the number to words
+                
+                if(out_file) // Check if an output file is provided
+                {
+                    fwrite(out_str, sizeof(char), strlen(out_str), out_file); // Write the converted number to the output file
+                }
+                else // if output file isnt provided output to stdout
+                {
+                    printf("%s", out_str); // Print the converted number to stdout
+                }
+
+                number_to_convert = 0; // Reset the number for the next iteration
+                digits_converted = 0; // Reset the index for the next number
+        }
+
+        else
+        {
+            if(( last_char >= '0') && (last_char <= '9'))
+            {
+                number_to_convert *= 10; // Shift the current number left
+                number_to_convert += last_char - '0'; // Convert the current char to int and add it to the number
+                digits_converted++; // Move to the next char in the buffer
+            }
+        }
+
+        last_char = fgetc(inp_file); // get the next last char
+    }
+
+    if (digits_converted > 0) // Check if there is a number left to convert that wasnt conveted because of the EOF that ended the loop
+    {
+        out_str = convert_num_to_literal_string(number_to_convert); // Convert the last number to words
+        
+        if(out_file) // Check if an output file is provided
+        {
+            fwrite(out_str, sizeof(char), strlen(out_str), out_file); // Write the last converted number to the output file
+        }
+        else // if output file isnt provided output to stdout
+        {
+            printf("%s", out_str); // Print the last converted number to stdout
+        }
+    }
+    
+}
+
+
+void numbers(int argc, char *argv[])
+{
+
+    /**
+     * @brief the function handles the input and output of the program based on the arguments and where should it go
+     * @param argc the number of arguments passed to the program
+     * @param argv arguments passed to the program
+     */
+
+
+
+    FILE * inp_file = NULL; // Pointer for input file
+    FILE * out_file = NULL; // Pointer for output file
+
+    switch(argc)
+    {
+        case 1: // No arguments provided, read from stdin output to stdout
+            printf("please enter numbers to convert that are seperated by blank spaces from 0 to 99\n");
+            file_handle(stdin, NULL); // Handle stdin input
+            break;
+        
+        case 3: //two args provided read first open output file then read input file with case 2
+            out_file = fopen(argv[2], "w");
+            if (out_file == NULL) //if the file didnt open
+            {
+                error("opening output file.");
+            }
+
+
+        case 2: // One argument provided, read from the file, write to stdout
+            inp_file = fopen(argv[1], "r");
+            if (inp_file == NULL) //if the file didnt open
+            {
+                error("opening input file."); 
+            }
+            file_handle(inp_file, out_file); // Handle the input file and output file (if no output it will be NULL)
+            fclose(inp_file); // after handeling the input file close it
+            break;        
+    }
+
+    if(out_file && argc == 3) // if there is an output file provided
+    {
+        fclose(out_file); //close the output file
+    }
+
+
+}
+int main(int argc, char *argv[])
+{
+    numbers(argc, argv);
+    return 0;
+}

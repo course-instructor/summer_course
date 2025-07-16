@@ -1,0 +1,131 @@
+int get_meassage(int sockfd)
+{
+    int numbytes;
+    char buf [MESSAGE_LENGTH];
+    if ((numbytes = recv(sockfd, buf, 3, 0)) == -1)
+    {
+        perror("recv");
+        exit(1);
+    }
+
+    int number = 0;
+    char * temp;
+    char * args [2];
+    args[0] = malloc(3);
+    int arg_index = 0;
+    int i = 0;
+
+
+    //get number
+    for(; i < numbytes &&  buf[i] != '\n'; i++)
+    {
+        number *= 10;
+        number += buf[i] - '0';
+    }
+    i++;
+
+
+    //seperate function
+    switch (number)
+    {
+        case (SIGN_UP_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                printf("signed up sucssesfully\n");
+            }
+
+            else//failed (-1)
+            {
+                printf("signed up un-sucssesfully\n");
+            }
+            break;
+
+        case (LOG_IN_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                mutex_lock(& g_level);
+                printf("loged in sucssesfully\n");
+                g_level = LOGGED_IN;
+                mutex_unlock(& g_level);
+            }
+
+            else//failed (-1)
+            {
+                printf("loged in un-sucssesfully\n");
+            }
+            break;
+
+        case (LIST_OF_ROOMS_RESPONSE):
+            if(buf[i] != "-1") //success
+            {
+                printf("availble rooms: \n");
+            }
+            else // failed
+            {
+                printf("get rooms unsuccessfull: %s", buf[i]);
+            }
+            break;
+        case (ENTER_ROOM_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                mutex_lock(& g_level);
+                printf("entered room sucssesfully\n");
+                g_level = IN_ROOM;
+                mutex_unlock(& g_level);
+            }
+
+            else//failed (-1)
+            {
+                printf("entered room un-sucssesfully\n");
+            }
+            break;
+
+        case (MESSAGE_FROM_CLIENT):            
+            int length = strnchr(buf[i], '\n', MESSAGE_LENGTH);
+            char name [length];
+            strncpy(name,buf[i], length);
+            name[length] = '0';
+
+            i += length;
+
+            length = strnchr(buf[i], '\0', MESSAGE_LENGTH);
+            char message [length];
+            strncpy(message,buf[i], length);
+
+            printf("%s: %s\n");
+            
+
+            break;
+
+        case (MESSAGE_FROM_SERVER):
+
+            length = strnchr(buf[i], '\0', MESSAGE_LENGTH);
+            char message [length];
+            strncpy(message,buf[i], length);
+
+            printf("server: %s\n");
+            break;
+            ////use strdup!!!
+        case (EXIT_ROOM_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                mutex_lock(& g_level);
+                printf("loged in sucssesfully\n");
+                g_level = LOGGED_IN;
+                mutex_unlock(& g_level);
+            }
+
+            else//failed (-1)
+            {
+                printf("loged in un-sucssesfully\n");
+            }
+            break;
+
+        default:
+            perror("invalid message number\n");
+            break;
+    }
+}
+
+
+
