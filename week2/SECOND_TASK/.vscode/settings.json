@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "errno.h": "c",
-        "message.h": "c"
+        "message.h": "c",
+        "common.h": "c",
+        "c_request.h": "c",
+        "netdb.h": "c",
+        "s_handle_request.h": "c"
     }
 }

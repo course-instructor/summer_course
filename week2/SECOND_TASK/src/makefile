@@ -1,20 +1,22 @@
 # Compiler and flags
 CC      = gcc
 CFLAGS  = -Wall -Wextra -std=c99 -g -D_POSIX_C_SOURCE=200112L
+LDFLAGS = -pthread
 
 # Directories
 SERVER_DIR   = server
 CLIENT_DIR   = client
 
-# Source files
-SERVER_SRC   = $(SERVER_DIR)/server.c
-CLIENT_SRC   = $(CLIENT_DIR)/client.c
+# Include paths
+INCLUDES     = -I. -I$(SERVER_DIR) -I$(CLIENT_DIR)
 
-# Object files
-SERVER_OBJS  = $(SERVER_SRC:.c=.o)
-CLIENT_OBJS  = $(CLIENT_SRC:.c=.o)
+# Source file lists
+# Collect all .c in server directory plus common.c
+SERVER_SRCS  = $(wildcard $(SERVER_DIR)/*.c) common.c
+# Collect all .c in client directory plus common.c
+CLIENT_SRCS  = $(wildcard $(CLIENT_DIR)/*.c) common.c
 
-# Targets (binaries)
+# Binaries
 SERVER_BIN   = $(SERVER_DIR)/server
 CLIENT_BIN   = $(CLIENT_DIR)/client
 
@@ -22,17 +24,13 @@ CLIENT_BIN   = $(CLIENT_DIR)/client
 .PHONY: all
 all: $(SERVER_BIN) $(CLIENT_BIN)
 
-# Link server
-$(SERVER_BIN): $(SERVER_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+# Build server from all sources
+$(SERVER_BIN): $(SERVER_SRCS)
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
-# Link client
-$(CLIENT_BIN): $(CLIENT_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
-
-# Compile rule for .o files
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# Build client from all sources
+$(CLIENT_BIN): $(CLIENT_SRCS)
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
 
 # Run rules
 .PHONY: run-server run-client
@@ -42,7 +40,7 @@ run-server: $(SERVER_BIN)
 run-client: $(CLIENT_BIN)
 	./$(CLIENT_BIN) localhost
 
-# Clean up
+# Clean up binaries only
 .PHONY: clean
 clean:
-	rm -f $(SERVER_OBJS) $(CLIENT_OBJS) $(SERVER_BIN) $(CLIENT_BIN)
+	rm -f $(SERVER_BIN) $(CLIENT_BIN)

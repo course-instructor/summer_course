@@ -1,3 +1,7 @@
+#include  "c_request.h"
+#include "common.h"
+
+
 int send_signup_message(int sockfd, const char *name, const char *password) 
 {
     message_s *message = (struct message_s *)malloc(sizeof(message_s));

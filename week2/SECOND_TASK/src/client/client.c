@@ -12,6 +12,9 @@
 
 
 #include "common.h"
+#include  "c_request.h"
+
+
 
 
 #define PORT "3490"         // Port number for connection
@@ -25,6 +28,7 @@ char ** INP_MESSAGES =
 "send a message in the room (enter 104), or exit room (enter 105):\t"
 };
 
+#define ALLOWED_ACTIONS = {{SIGN_UP,LOG_IN}, {LIST_OF_ROOMS, ENTER_ROOM}, {MESSEGE_ROOM, EXIT_ROOM}}
 
 
 enum e_highrarchy g_level = NOT_REGISTERD;
@@ -45,7 +49,19 @@ void get_name_and_pass(char * name, char * password)
     name[pass_length] = '\0';
 }
 
+int check_action_permission(request_e request)
+{
+    int ret = 0;
+    pthread_mutex_lock(g_level);
+    ret = ALLOWED_ACTIONS[g_level] == request;
+    if(!ret)
+    {
+        printf(INP_MESSAGES[g_level]);
+    }
 
+    pthread_mutex_unlock(g_level);
+    return ret;
+}
 
 void get_input(int sockfd)
 {
@@ -65,7 +81,10 @@ void get_input(int sockfd)
 
         
         scanf("%d", &number);
-
+        if(!check_action_permission(number)) //inapropriate protocol
+        {
+            continue;
+        }
 
         switch (number)
         {

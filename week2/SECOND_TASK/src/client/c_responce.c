@@ -1,3 +1,7 @@
+#include  "c_responce.h"
+#include "common.h"
+
+
 void handle_message(char * buf, int num)
 {
     int i = 0;

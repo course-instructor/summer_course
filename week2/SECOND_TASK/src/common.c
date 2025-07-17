@@ -3,12 +3,19 @@
 #define MESSAGE_LENGTH 256
 #include <string.h>
 #include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include "common.h"
+
 
 extern void handle_message(char * buf, int num);
 
 
 
-static int send_message(const message_s * message, int sockfd)
+int send_message(const message_s * message, int sockfd)
 {
     int param_index = 0;
     char payload [MESSAGE_LENGTH];
@@ -21,13 +28,6 @@ static int send_message(const message_s * message, int sockfd)
     snprintf(payload, MESSAGE_LENGTH, "%s%c", payload, END_CHAR);
 
     return send(sockfd, payload,sizeof(payload), 0);
-}
-
-void read_message(char * buf)
-{
-    int number;
-    
-    
 }
 
 
@@ -54,14 +54,10 @@ int get_message(int sockfd)
 
     handle_message(buf, number);
 }
-
-// Get IP address from sockaddr structure, handling both IPv4 and IPv6.
-void *get_in_addr(struct sockaddr *sa)
+void *get_in_addr( struct sockaddr *sa)
 {
     if (sa->sa_family == AF_INET)
-    {
         return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
