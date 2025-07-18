@@ -1,0 +1,9 @@
+ready_set SETA 9,10,11,12
+ready_set SETB 5,6,7,8
+union_set SETA, SETB, SETC
+print_set, SETC
+add_set SETA,SETB,SETC
+ready_set SETA 20,30,
+ready_set SETB 20,,30
+union_set SETA,SETB
+union_set, SETA
