@@ -49,6 +49,10 @@ static const request requests[AMOUNT_OF_REQUESTS] =
 user connected_users[MAX_CONNECTIONS];
 int room_lock = 0;
 
+/**
+ * @brief thread for handling users requests
+ * @param thread_id and file discriptor
+ */
 int userHandle(void * arguments)
 {
     struct args_s *args = (struct args_s *)arguments;
@@ -157,7 +161,12 @@ int register_user(int thread_id,char *output ,char * username , char * password)
 }
 
 
-
+/**
+ * @brief get user from database
+ * @param username new user's name
+ * @param password new user's password
+ * @return SUCCESS or FAILURE
+ */
 int login_user(int thread_id,char * output,char * username , char * password)
 {
     user logging_user;
@@ -198,6 +207,10 @@ int login_user(int thread_id,char * output,char * username , char * password)
 }
 
 
+/**
+ * @brief get rooms from database
+ * @return SUCCESS or FAILURE
+ */
 int getRooms_user(int thread_id,char *output, void * arg1, void * arg2)
 {
     room * rooms[ROOMS_AMOUNT];
@@ -216,7 +229,10 @@ int getRooms_user(int thread_id,char *output, void * arg1, void * arg2)
     
 }
 
-
+/**
+ * @brief add user to a room
+ * @return SUCCESS or FAILURE
+ */
 int joinRoom_user(int thread_id,char * output, char * room_name)
 {
     room r;
@@ -234,7 +250,10 @@ int joinRoom_user(int thread_id,char * output, char * room_name)
     return SUCCESS;
 }
 
-
+/**
+ * @brief sent a messge to current room
+ * @return SUCCESS or FAILURE
+ */
 int send_user(int thread_id, char * output,char * msg)
 {
     room r;
@@ -252,7 +271,9 @@ int send_user(int thread_id, char * output,char * msg)
     return SUCCESS;
 }
 
-
+/**
+ * @brief exits a room
+ */
 int exit_user(int thread_id)
 {
     room r;
@@ -268,7 +289,9 @@ int exit_user(int thread_id)
     fclose(room_file);
     return SUCCESS;
 }
-
+/**
+ * @brief writes username and password into a file
+ */
 int writeUser(user * new_user)
 {
 	FILE * file;
@@ -297,7 +320,9 @@ int writeUser(user * new_user)
 	fclose(file);
     return flag;
 }
-
+/**
+ * @brief finds username and password in a file
+ */
 int findUserByUsername(char * username,user *saved_user)
 {
 
@@ -337,6 +362,9 @@ int findUserByUsername(char * username,user *saved_user)
 	return is_found;
 }
 
+/**
+ * @brief get rooms name from rooms folder
+ */
 void getRooms(room *rooms[ROOMS_AMOUNT]) {
     int room_count = 0;
     DIR *d;
@@ -382,7 +410,9 @@ void getRooms(room *rooms[ROOMS_AMOUNT]) {
 
     closedir(d);
 }
-
+/**
+ * @brief gets a single room by name from room folder
+ */
 int getRoomByName(room * room_output,char * room_name)
 {
     DIR *d;
@@ -430,6 +460,10 @@ int getRoomByName(room * room_output,char * room_name)
 
 
 }
+/**
+ * @brief sends messege to multiple users that are in the same room as the current user, 
+ * this function can be used by only one thread at a time
+ */
 int multicast_messege(int thread_id,char * msg_data,int msg_length)
 {
     user * current_user = &connected_users[thread_id];

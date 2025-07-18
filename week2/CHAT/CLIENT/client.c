@@ -19,11 +19,14 @@
 
 int main(int argc, char *argv[])
 {
-	clientSide(argc,argv);
+	/*write "localhost" if you host sever localy*/
+	clientSide(argc,argv); 
 
 	
 }
-
+/**
+ * @brief start program
+ */
 void clientSide(int argc, char *argv[])
 {
 	int sockfd = -1;
@@ -43,7 +46,9 @@ void clientSide(int argc, char *argv[])
 	pthread_join(input_thread,NULL);
 
 }
-
+/**
+ * @brief send message to socket
+ */
 int send_message(int sockfd, const message *msg, size_t data_size) 
 {
 	char buf[sizeof(message)];
@@ -66,6 +71,9 @@ int send_message(int sockfd, const message *msg, size_t data_size)
 	return SUCCESS;
 }
 
+/**
+ * @brief receive messege from sockets
+ */
 int receive_message(int sockfd, message *msg, size_t data_size) 
 {
 	char buf[sizeof(message)];
@@ -97,6 +105,9 @@ int receive_message(int sockfd, message *msg, size_t data_size)
 	return SUCCESS;
 }
 
+/**
+ * @brief send new request
+ */
 int sendRequest(request * rq, message * send_msg,message * recv_msg,int sockfd)
 {
 	int data_size = 0;
@@ -134,7 +145,9 @@ int sendRequest(request * rq, message * send_msg,message * recv_msg,int sockfd)
 	
 
 }
-
+/**
+ * @brief thread for reading incoming messeges
+ */
 void recive_update(int *sockfd)
 {
     message recv_msg;
@@ -171,7 +184,9 @@ void *get_in_addr(struct sockaddr *sa)
 
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
-
+/**
+ * @brief connect to server
+ */
 int establish_connection(char * address)
 {
 	int sockfd, numbytes;  

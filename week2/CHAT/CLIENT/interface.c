@@ -17,7 +17,9 @@ static const request requests[AMOUNT_OF_REQUESTS] =
 	{REQUEST_SEND		,REPLY_SEND		,	IN_ROOM_USER	,	1	,send_args		,	(void *)&send_user		},
 	{REQUEST_EXIT		,REPLY_EXIT		,	IN_ROOM_USER	,	0	,NULL   		,	(void *)&exit_user		}
 };
-
+/**
+ * @brief main thread to handle users input and requests
+ */
 void userInterface(int *sockfd)
 {
     int sign_choice;
@@ -46,26 +48,23 @@ void userInterface(int *sockfd)
     while(chat_screen(*sockfd) == SUCCESS)
     {
 
-    }
-    
-
-
-
-    
-
+    }  
 
 }
+
+
+/**
+ * @brief send messeges
+ */
 int chat_screen(int sockfd)
 {
     message send_msg,recv_msg;
     request rq = requests[NUM_SEND];
     return sendRequest(&rq,&send_msg,&recv_msg,sockfd);
-   
-
 }
-
-
-
+/**
+ * @brief choose room to join
+ */
 int choose_room_option(int sockfd, char * room)
 {
     message send_msg,recv_msg;
@@ -97,12 +96,12 @@ int choose_room_option(int sockfd, char * room)
 
     }
 
-    return status;
-    
-    
+    return status;   
 }
 
-
+/**
+ * @brief choose between login and sign up
+ */
 int choose_sign_option(void)
 {
     char input;
@@ -120,6 +119,9 @@ int choose_sign_option(void)
     
     return input - '0';
 }
+/**
+ * @brief sigining in by user's choice
+ */
 int sign_request(int choice,int sockfd)
 {
     message send_msg;
@@ -184,6 +186,9 @@ int contains_whitespace(const char *str) {
     }
     return 0; 
 }
+/**
+ * @brief get new user from input
+ */
 int register_user       (char * output, char * username , char * password)
 {
     int isvalid = 0;
@@ -243,7 +248,9 @@ int register_user       (char * output, char * username , char * password)
     return SUCCESS;
 
 }
-
+/**
+ * @brief get existing user from input
+ */
 int login_user          (char * output, char * username , char * password)
 {
     printf("---LOGIN---\n");
@@ -303,6 +310,9 @@ int login_user          (char * output, char * username , char * password)
 
 
 }
+/**
+ * @brief rooms title
+ */
 int getRooms_user(char *output, char * rooms, void * arg2)
 {
 
@@ -315,6 +325,9 @@ int getRooms_user(char *output, char * rooms, void * arg2)
 
 
 }
+/**
+ * @brief get room to join from input
+ */
 int joinRoom_user       (char * room_name)
 {
     printf("\n---JOIN ROOMS---\n");
@@ -325,6 +338,9 @@ int joinRoom_user       (char * room_name)
     return SUCCESS;
 
 }
+/**
+ * @brief get messege to sent from input
+ */
 int send_user           (char * msg,void * arg1, void* arg2)
 {
 
