@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <stdatomic.h>
+
 
 
 #include "common.h"
@@ -19,68 +21,83 @@
 
 #define PORT "3490"         // Port number for connection
 
-enum e_highrarchy { NOT_REGISTERD, LOGGED_IN, IN_ROOM };
 
-char ** INP_MESSAGES =
+const char * INP_MESSAGES [] =
 {
 "sign up (enter 100), or log in (enter 101):\t",
 "get a list of the rooms (enter 102), or choose a room to enter (103):\t",
 "send a message in the room (enter 104), or exit room (enter 105):\t"
 };
 
-#define ALLOWED_ACTIONS = {{SIGN_UP,LOG_IN}, {LIST_OF_ROOMS, ENTER_ROOM}, {MESSEGE_ROOM, EXIT_ROOM}}
+static const enum request_e ALLOWED_ACTIONS[][2] = {
+    { SIGN_UP,       LOG_IN        },
+    { LIST_OF_ROOMS, ENTER_ROOM    },
+    { MESSEGE_ROOM,  EXIT_ROOM     }
+};
 
-
-enum e_highrarchy g_level = NOT_REGISTERD;
-pthread_mutex_init(g_level);
+_Atomic enum connection_e g_level = NOT_CONNECTED;
 
 
 
 void get_name_and_pass(char * name, char * password)
 {
     printf("enter username: \t");
+    fflush(stdout);
+
     fgets(name, MESSAGE_LENGTH, stdin);
-    int name_length = strchr(name,'\n');
-    name[name_length] = '\0';
 
-    printf("enter password: \t");
-    int pass_len = fgets(password, MESSAGE_LENGTH, stdin);
-    int pass_length = strchr(name,'\n');
-    name[pass_length] = '\0';
-}
-
-int check_action_permission(request_e request)
-{
-    int ret = 0;
-    pthread_mutex_lock(g_level);
-    ret = ALLOWED_ACTIONS[g_level] == request;
-    if(!ret)
+    char *line_end = strchr(name,'\n');
+    if (line_end)
     {
-        printf(INP_MESSAGES[g_level]);
+        *line_end = '\0';
     }
 
-    pthread_mutex_unlock(g_level);
+    printf("enter password: \t");
+    fflush(stdout);
+
+    fgets(password, MESSAGE_LENGTH, stdin);
+    line_end = strchr(password,'\n');
+    if (line_end)
+    {
+        *line_end = '\0';
+    }
+}
+
+int check_action_permission(enum request_e request)
+{
+    int ret = 0;
+    enum connection_e level = g_level; //so that it doesnt change in the middle of the if
+    ret = (ALLOWED_ACTIONS[level][0] == request || ALLOWED_ACTIONS[level][1] == request);
+    if(!ret)
+    {
+        printf("%s", INP_MESSAGES[level]);
+        fflush(stdout);
+    }
+
     return ret;
 }
 
-void get_input(int sockfd)
+void * get_input(void * arg)
 {
+    int sockfd = *((int*) arg);
+
     int number;
     char text [MESSAGE_LENGTH];
-    enum e_highrarchy curr_levl = NOT_REGISTERD;
+    enum connection_e curr_level = IN_ROOM; //to ensure that it is different from the g_level initial value
 
     while(1)
     {
-        pthread_mutex_lock(g_level);
-        if(g_level != curr_levl)
+        if(g_level != curr_level)
         {
-            curr_levl = g_level;
-            printf(INP_MESSAGES[g_level]);
+            curr_level = g_level;
+            printf("%s", INP_MESSAGES[curr_level]);
+            fflush(stdout);
         }
-        pthread_mutex_unlock(g_level);
 
-        
-        scanf("%d", &number);
+
+        fgets(text,MESSAGE_LENGTH,stdin);
+        number = -1;
+        sscanf(text,"%d",&number);
         if(!check_action_permission(number)) //inapropriate protocol
         {
             continue;
@@ -98,7 +115,7 @@ void get_input(int sockfd)
                 get_name_and_pass(name,password);
                 send_signup_message(sockfd,name,password);
                 break;
-            
+
             // case LOG_IN:
             //     char name [MESSAGE_LENGTH] ;
             //     char password [MESSAGE_LENGTH] ;
@@ -108,62 +125,78 @@ void get_input(int sockfd)
 
             //     get_name_and_pass(name,password);
             //     send_signup_message
-            
+
             default:
                 break;
-        }        
-        
+        }
+
 
 
         char buf [MESSAGE_LENGTH];
         fgets(buf, MESSAGE_LENGTH, stdin);
         buf[strlen(buf) - 1] = '\0'; //handle the \n from fgets
     }
-    
 
+    return NULL;
+}
+
+void * handle_connection (void* arg)
+{
+    int sockfd = *((int *) arg);
+    while(get_message(sockfd));
+    close(sockfd);
+    return NULL;
 }
 
 int main(int argc, char *argv[])
 {
-    int sockfd, numbytes;
-    char buf[MESSAGE_LENGTH];
+    int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
+    char * server_name;
 
     // Check for correct command-line arguments.
-    if (argc != 2) 
+    if(argc == 1)
     {
-        fprintf(stderr, "usage: client hostname\n");
+        server_name = "localhost";
+    }
+
+    else if(argc == 2)
+    {
+        server_name = argv[1];
+    }
+
+    else
+    {
+        fprintf(stderr, "usage: %s [hostname]\n", argv[0]);
         exit(1);
     }
 
-    memset(&hints, 0, sizeof hints);
+    memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;     // Allow IPv4 or IPv6
     hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
-    
+
 
     // Get server address information.
-    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) 
+    if ((rv = getaddrinfo(server_name, PORT, &hints, &servinfo)) != 0)
     {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
 
     // Loop through results and connect to the first available.
-    for (p = servinfo; p != NULL; p = p->ai_next) 
+    for (p = servinfo; p != NULL; p = p->ai_next)
     {
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
         {
-            perror("client: socket");
             continue;
         }
 
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) 
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1)
         {
             close(sockfd);
-            perror("client: connect");
             continue;
         }
         break; // Connection successful
@@ -180,17 +213,20 @@ int main(int argc, char *argv[])
     inet_ntop(p -> ai_family, get_in_addr((struct sockaddr*)p->ai_addr), s, sizeof s);
     printf("client: connecting to %s\n", s);
 
-    pthread server_listn;
-    pthread ui;
 
-    pthread_create(& server_listn, get_message());
-    pthread_create(& ui, get_input());
+    pthread_t server_listn;
+    pthread_t ui;
 
+    pthread_create(& server_listn,NULL, handle_connection,&sockfd);
+    pthread_create(& ui,NULL, get_input,&sockfd);
+
+
+    pthread_join(server_listn, NULL);
+    pthread_join(ui, NULL);
     freeaddrinfo(servinfo); // Free allocated memory
 
-    buf[0] = '\0';
-    
-    
+
+
     close(sockfd); // Close the socket.
     return 0;
 }

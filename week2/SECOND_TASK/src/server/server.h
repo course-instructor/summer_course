@@ -15,9 +15,10 @@
 #define ROOM_COUNT 5
 #define BACKLOG 10
 #define MAX_CLIENTS 50
-#define PORT "8141"
+#define PORT "3490"
 
 extern room_s *room1;
 extern int    g_current_clients;
 
 void *handle_client(void *arg);
+

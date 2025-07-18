@@ -1,21 +1,19 @@
 #pragma once
-
+#include "common.h"
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+
+
 #define ROOM_COUNT 5
 
-typedef enum {
-    NOT_CONNECTED,
-    CONNECTED,
-    IN_ROOM
-} connection_status;
+
 
 typedef struct client_s {
-    int                   sockfd;
-    char *                  name;
-    connection_status     status;
+    int sockfd;
+    const char * name;
+    enum connection_e status;
     struct sockaddr_storage addr;
 } client_s, *client_ptr_t;
 

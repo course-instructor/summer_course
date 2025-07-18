@@ -12,61 +12,34 @@ int     g_current_clients = 0;
 
 void *handle_client(void *arg)
 {
+    printf("handling new client\n");
     client_ptr_t client = (client_ptr_t)arg;
-    char         buf[1024];
-    int          bytes_received;
-    send(client->sockfd, "Welcome to the chat!\n", 22, 0);
-    int connected_flag = 0;
+    // send(client->sockfd, "Welcome to the chat!\n", 22, 0);
 
-    while ((bytes_received = recv(client->sockfd, buf, sizeof(buf) - 1, 0)) > 0)
-    {
-        buf[bytes_received] = '\0';
-        printf("Server: Received from client: %s\n", buf);
-        fflush(stdout);
+    while (get_message(client->sockfd));
 
-        if (connected_flag)
-            broadcast(room1, client, buf);
-
-        char response_msg[1024];
-        snprintf(response_msg, sizeof(response_msg), "Server received: '%s'", buf);
-
-        if (strcmp(buf, "end") == 0)
-        {
-            send(client->sockfd, "goodbye\0", strlen(response_msg), 0);
-            break;
-        }
-        else if (strcmp(buf, "connect") == 0)
-        {
-            connected_flag = 1;
-            pthread_mutex_lock(&clients_mutex);
-            add_client(room1->clients, client);
-            pthread_mutex_unlock(&clients_mutex);
-        }
-        else
-            send(client->sockfd, response_msg, strlen(response_msg), 0);
-    }
-
+    printf("client out\n");
     close(client->sockfd);
     pthread_mutex_lock(&clients_mutex);
     g_current_clients--;
     rem_client(room1->clients, client);
     pthread_mutex_unlock(&clients_mutex);
     free(client);
-    pthread_exit(NULL);
+    return NULL;
 }
 
 int main(void)
 {
-    int                 sockfd, new_fd, rv, yes = 1;
-    struct addrinfo     hints, *servinfo, *p;
+    int sockfd, new_fd, rv, yes = 1;
+    struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr;
-    socklen_t           sin_size;
-    char                s[INET6_ADDRSTRLEN];
+    socklen_t sin_size;
+    char s[INET6_ADDRSTRLEN];
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family   = AF_UNSPEC;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags    = AI_PASSIVE;
+    hints.ai_flags = AI_PASSIVE;
 
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0)
         return 1;
@@ -88,8 +61,8 @@ int main(void)
     listen(sockfd, BACKLOG);
 
     g_rooms[0].clients = innit_clients();
-    room1             = &g_rooms[0];
-
+    room1 = &g_rooms[0];
+    printf("wiating for connections\n");
     while (1)
     {
         sin_size = sizeof their_addr;
@@ -102,6 +75,7 @@ int main(void)
         if (g_current_clients >= MAX_CLIENTS)
         {
             pthread_mutex_unlock(&clients_mutex);
+            printf("clients over %d\n", MAX_CLIENTS);
             close(new_fd);
             continue;
         }

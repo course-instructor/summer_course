@@ -2,8 +2,18 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define MESSAGE_LENGTH 256
+
+int handle_message(char * buf_ptr, int number);
+
+enum connection_e
+{
+  NOT_CONNECTED,
+  CONNECTED,
+  IN_ROOM
+};
 
 enum request_e {
     SIGN_UP       = 100,
@@ -25,19 +35,18 @@ enum response_e {
 };
 
 typedef struct message_s {
-    int            param_count;
+    int param_count;
     enum request_e request_num;
-    char         **params;
+    const char **params;
 } message_s;
 
-#define SEPERATING_CHAR  '\r'
+
+#define SEPERATING_CHAR  '@'
 #define END_CHAR         '\n'
 
-// request‐side
 int send_signup_message(int sockfd, const char *name, const char *password);
 int send_message(int sockfd, const message_s *message);
 int get_message(int sockfd);
 
-// utility
-void *get_in_addr(struct sockaddr *sa);
-int   get_param(char *buf, char *ret);
+void *get_in_addr(const struct sockaddr *sa);
+int   get_param(const char *buf, char *ret);

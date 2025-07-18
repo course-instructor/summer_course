@@ -5,10 +5,8 @@
 #include "common.h"
 #include "s_rooms.h"
 
-/**
- * Handle user sign-up request.
- * @return 0 on success, non-zero on failure
- */
+
+
 int handle_signup(const char *name, const char *password);
 
 /**

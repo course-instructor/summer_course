@@ -5,6 +5,7 @@
         "common.h": "c",
         "c_request.h": "c",
         "netdb.h": "c",
-        "s_handle_request.h": "c"
+        "s_handle_request.h": "c",
+        "server.h": "c"
     }
 }

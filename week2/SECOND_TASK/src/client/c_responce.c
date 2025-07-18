@@ -1,9 +1,12 @@
-#include  "c_responce.h"
 #include "common.h"
+#include <stdio.h>
+#include <string.h>
 
+extern enum connection_e g_level;
 
-void handle_message(char * buf, int num)
+int handle_message(char * buf, int num)
 {
+    int is_connected = 1;
     int i = 0;
     switch (num)
     {
@@ -19,94 +22,89 @@ void handle_message(char * buf, int num)
             }
             break;
 
-        case (LOG_IN_RESPONSE):
-            if(buf[i] == '0') //success
-            {
-                pthread_mutex_lock(& g_level);
-                printf("loged in sucssesfully\n");
-                g_level = LOGGED_IN;
-                pthread_mutex_unlock(& g_level);
-            }
+        // case (LOG_IN_RESPONSE):
+        //     if(buf[i] == '0') //success
+        //     {
+        //         printf("loged in sucssesfully\n");
+        //         g_level = LOG_IN;
+        //     }
 
-            else//failed (-1)
-            {
-                printf("loged in un-sucssesfully\n");
-            }
-            break;
+        //     else//failed (-1)
+        //     {
+        //         printf("loged in un-sucssesfully\n");
+        //     }
+        //     break;
 
-        case (LIST_OF_ROOMS_RESPONSE):
-            if(buf[i] != "-1") //success
-            {
-                printf("availble rooms: \n");
-                int len;
-                while (1)
-                {
-                    printf("room: %s\n", buf);
-                    len = strlen(buf);
+        // case (LIST_OF_ROOMS_RESPONSE):
+        //     if(buf[i] != "-1") //success
+        //     {
+        //         printf("availble rooms: \n");
+        //         int len;
+        //         while (1)
+        //         {
+        //             printf("room: %s\n", buf);
+        //             len = strlen(buf);
 
-                    if(buf[len - 1] == '\n') //if last char in the param is \n then its the end...
-                    {
-                        break;
-                    }
+        //             if(buf[len - 1] == '\n') //if last char in the param is \n then its the end...
+        //             {
+        //                 break;
+        //             }
 
-                    buf += len; //next param
+        //             buf += len; //next param
 
-                }
-                printf("\n\n");
-            }
-            else // failed
-            {
-                printf("get rooms unsuccessfull: %s", buf[i]);
-            }
-            break;
-        
-        case (ENTER_ROOM_RESPONSE):
-            if(buf[i] == '0') //success
-            {
-                pthread_mutex_lock(& g_level);
-                printf("entered room sucssesfully\n");
-                g_level = IN_ROOM;
-                pthread_mutex_unlock(& g_level);
-            }
+        //         }
+        //         printf("\n\n");
+        //     }
+        //     else // failed
+        //     {
+        //         printf("get rooms unsuccessfull: %s", buf[i]);
+        //     }
+        //     break;
 
-            else//failed (-1)
-            {
-                printf("entered room un-sucssesfully\n");
-            }
-            break;
+        // case (ENTER_ROOM_RESPONSE):
+        //     if(buf[i] == '0') //success
+        //     {
+        //         printf("entered room sucssesfully\n");
+        //         g_level = IN_ROOM;
+        //     }
 
-        case (MESSAGE_FROM_CLIENT):            
-            char * name;
-            char * message;
+        //     else//failed (-1)
+        //     {
+        //         printf("entered room un-sucssesfully\n");
+        //     }
+        //     break;
 
-            get_param(buf, name);
-            get_param(buf, message);
+        // case (MESSAGE_FROM_CLIENT):
+        //     char * name;
+        //     char * message;
 
-            printf("%s: %s\n", name, message);
-            break;
+        //     get_param(buf, name);
+        //     get_param(buf, message);
 
-        case (MESSAGE_FROM_SERVER):
-            printf("server: %s\n" , buf);
-            break;
+        //     printf("%s: %s\n", name, message);
+        //     break;
 
-        case (EXIT_ROOM_RESPONSE):
-            if(buf[i] == '0') //success
-            {
-                pthread_mutex_lock(& g_level);
-                printf("loged in sucssesfully\n");
-                g_level = LOGGED_IN;
-                pthread_mutex_unlock(& g_level);
-            }
+        // case (MESSAGE_FROM_SERVER):
+        //     printf("server: %s\n" , buf);
+        //     break;
 
-            else//failed (-1)
-            {
-                printf("loged in un-sucssesfully\n");
-            }
-            break;
+        // case (EXIT_ROOM_RESPONSE):
+        //     if(buf[i] == '0') //success
+        //     {
+        //         printf("logged in sucssesfully\n");
+        //         g_level = LOG_IN;
+        //     }
+
+        //     else//failed (-1)
+        //     {
+        //         printf("logged in un-sucssesfully\n");
+        //     }
+        //     break;
 
         default:
             perror("invalid message number\n");
             break;
     }
+    return is_connected;
 }
 

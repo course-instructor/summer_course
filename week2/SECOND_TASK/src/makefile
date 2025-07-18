@@ -1,46 +1,31 @@
-# Compiler and flags
-CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c99 -g -D_POSIX_C_SOURCE=200112L
-LDFLAGS = -pthread
+# Makefile
 
-# Directories
-SERVER_DIR   = server
-CLIENT_DIR   = client
+CC       := gcc
+CFLAGS   := -Wall -Wextra -std=c11 -g -D_POSIX_C_SOURCE=200112L -I. -Iserver -Iclient
+LDFLAGS  := -pthread
 
-# Include paths
-INCLUDES     = -I. -I$(SERVER_DIR) -I$(CLIENT_DIR)
+SERVER_SRCS := server/server.c \
+               server/s_handle_request.c \
+               server/s_rooms.c \
+               common.c
 
-# Source file lists
-# Collect all .c in server directory plus common.c
-SERVER_SRCS  = $(wildcard $(SERVER_DIR)/*.c) common.c
-# Collect all .c in client directory plus common.c
-CLIENT_SRCS  = $(wildcard $(CLIENT_DIR)/*.c) common.c
+CLIENT_SRCS := client/client.c \
+               client/c_requests.c \
+               client/c_responce.c \
+               common.c
 
-# Binaries
-SERVER_BIN   = $(SERVER_DIR)/server
-CLIENT_BIN   = $(CLIENT_DIR)/client
+SERVER_BIN := server/server
+CLIENT_BIN := client/client
 
-# Default target: build both
-.PHONY: all
+.PHONY: all clean
+
 all: $(SERVER_BIN) $(CLIENT_BIN)
 
-# Build server from all sources
 $(SERVER_BIN): $(SERVER_SRCS)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-# Build client from all sources
 $(CLIENT_BIN): $(CLIENT_SRCS)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-# Run rules
-.PHONY: run-server run-client
-run-server: $(SERVER_BIN)
-	./$(SERVER_BIN)
-
-run-client: $(CLIENT_BIN)
-	./$(CLIENT_BIN) localhost
-
-# Clean up binaries only
-.PHONY: clean
 clean:
 	rm -f $(SERVER_BIN) $(CLIENT_BIN)

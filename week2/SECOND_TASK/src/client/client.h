@@ -5,7 +5,6 @@
 
 #define CLIENT_PORT "3490"
 
-enum e_highrarchy { NOT_REGISTERED, LOGGED_IN, IN_ROOM };
 
 extern enum e_highrarchy g_level;
 
