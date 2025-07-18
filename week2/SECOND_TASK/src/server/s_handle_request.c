@@ -6,39 +6,50 @@
 #include "common.h"
 #include "s_rooms.h"  // for client_ptr_t and room APIs
 
-
-
-#include "common.h"
-#include "s_handle_request.h"
+static const char* SUCCESS[] = {"0"}; //success status: success action
+static const char* FAIL[] = {"-1"}; //success status: failed action
 
 extern room_s g_rooms [ROOM_COUNT];
 
-int handle_message(char * buf, int num)
+message_s * handle_signup(const char * buf)
 {
-    printf("got: %s\n",buf);
-    int is_connected = 1;
+    printf("recived signup\n");
     int reading_index = 0;
+
+    char name [MESSAGE_LENGTH];
+    get_param(buf,name, &reading_index);
+    printf("name: %s\n", name);
+    char pass [MESSAGE_LENGTH];
+    get_param(buf,pass, &reading_index);
+    printf("pass: %s\n", pass);
+
+    int success = process_signup(name,pass);
+
+    message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
+    response_message->param_count = 1;
+    response_message->request_num = SIGN_UP_RESPONSE;
+
+    if(success)
+    {
+        printf("signed up successfully\n");
+        response_message->params = SUCCESS;
+    }
+    else
+    {
+        printf("could not sign up\n");
+        response_message->params = FAIL;
+    }
+    return response_message;
+}
+
+message_s * handle_message(int num, const char * buf)
+{
+    message_s * response_message = NULL;
+
     switch (num)
     {
     case SIGN_UP:
-        printf("recived signup\n");
-        char name [MESSAGE_LENGTH];
-        get_param(buf,name, &reading_index);
-        printf("name: %s\n", name);
-        char pass [MESSAGE_LENGTH];
-        get_param(buf,pass, &reading_index);
-        printf("pass: %s\n", pass);
-
-        int success = handle_signup(name,pass);
-
-        if(success)
-        {
-            printf("signed up successfully\n");
-        }
-        else
-        {
-            printf("could not sign up\n");
-        }
+        response_message = handle_signup(buf);
         break;
 
     case LIST_OF_ROOMS: // on cient
@@ -47,20 +58,16 @@ int handle_message(char * buf, int num)
         printf("unknown message %d\n", num);
         break;
     }
-    return is_connected;
+    return response_message;
 }
 
 
 
-int handle_signup(const char *name, const char *password)
+int process_signup(const char *name, const char *password)
 {
-    int exists_flag = 0;
+    int signup_error = 0;
     FILE *f = fopen("users.txt", "r");
-    if (!f)
-    {
-        f = fopen("users.txt", "a");
-    }
-    else
+    if (f)
     {
         char line[MESSAGE_LENGTH];
         while (fgets(line, sizeof line, f))
@@ -68,9 +75,8 @@ int handle_signup(const char *name, const char *password)
             *(strchr(line, '\n')) = '\0';
             if (strcmp(line, name) == 0) // already exists
             {
-                fclose(f);
                 printf("user: %s already exists\n", name);
-                exists_flag = 1;
+                signup_error = 1;
             }
             if (!fgets(line, sizeof line, f)) //skip password
             {
@@ -78,19 +84,25 @@ int handle_signup(const char *name, const char *password)
             }
         }
         fclose(f);
+    }
+
+    if(!signup_error)
+    {
         f = fopen("users.txt", "a");
         if (!f)
         {
-            return 0;
+            perror("cannot open users.txt for append");
+            signup_error = 1; // didnt register so return 0
+        }
+        else
+        {
+            // Append new user: name\npassword\n
+            fprintf(f, "%s\n%s\n", name, password);
+            fclose(f);
         }
     }
-    if(!exists_flag)
-    {
-        // Append new user: name\npassword\n
-        fprintf(f, "%s\n%s\n", name, password);
-        fclose(f);
-    }
-    return !exists_flag;
+
+    return !signup_error;
 }
 
 int handle_login(client_s c,const char *name, const char *password)

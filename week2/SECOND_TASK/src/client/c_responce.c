@@ -4,14 +4,13 @@
 
 extern enum connection_e g_level;
 
-int handle_message(char * buf, int num)
+message_s * handle_message(int num, const char * buf)
 {
-    int is_connected = 1;
     int i = 0;
     switch (num)
     {
         case (SIGN_UP_RESPONSE):
-            if(buf[0] == 0) //success
+            if(buf[0] == '0') //success
             {
                 printf("signed up sucssesfully\n");
             }
@@ -105,6 +104,6 @@ int handle_message(char * buf, int num)
             perror("invalid message number\n");
             break;
     }
-    return is_connected;
+    return NULL;
 }
 

@@ -87,7 +87,7 @@ void * get_input(void * arg)
 
     while(1)
     {
-        if(g_level != curr_level)
+        if(g_level != IN_ROOM || g_level != curr_level)
         {
             curr_level = g_level;
             printf("%s", INP_MESSAGES[curr_level]);
@@ -132,9 +132,7 @@ void * get_input(void * arg)
 
 
 
-        char buf [MESSAGE_LENGTH];
-        fgets(buf, MESSAGE_LENGTH, stdin);
-        buf[strlen(buf) - 1] = '\0'; //handle the \n from fgets
+
     }
 
     return NULL;
@@ -145,6 +143,7 @@ void * handle_connection (void* arg)
     int sockfd = *((int *) arg);
     while(get_message(sockfd));
     close(sockfd);
+    printf("server disconected!\n");
     return NULL;
 }
 
@@ -222,7 +221,6 @@ int main(int argc, char *argv[])
 
 
     pthread_join(server_listn, NULL);
-    pthread_join(ui, NULL);
     freeaddrinfo(servinfo); // Free allocated memory
 
 

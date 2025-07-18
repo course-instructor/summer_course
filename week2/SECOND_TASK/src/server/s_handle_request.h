@@ -7,7 +7,7 @@
 
 
 
-int handle_signup(const char *name, const char *password);
+int process_signup(const char *name, const char *password);
 
 /**
  * Handle user login request.

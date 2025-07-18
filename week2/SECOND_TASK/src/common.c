@@ -11,21 +11,18 @@ int send_message(int sockfd, const message_s *message)
 {
     char payload[MESSAGE_LENGTH];
     int  pos = snprintf(payload, sizeof payload, "%d%c",message->request_num,SEPERATING_CHAR);
-    printf("%d \n",pos);
 
     for (int i = 0; i < message->param_count; i++)
     {
         pos += snprintf(payload + pos, sizeof payload - pos, "%s%c",  message->params[i], SEPERATING_CHAR);
-        printf("%d \n",pos);
     }
     payload[pos++] = END_CHAR;
-    printf("%s\n\n", payload);
     return send(sockfd, payload, pos, 0);
 }
 
 int get_message(int sockfd)
 {
-    printf("getting char\n");
+    printf("get message\n");
 
     int numbytes;
     char buf[MESSAGE_LENGTH];
@@ -37,7 +34,6 @@ int get_message(int sockfd)
     numbytes = recv(sockfd, buf, MESSAGE_LENGTH, 0);
     if (numbytes <= 0)
     {
-        printf("connection lost");
         is_connected = 0;
     }
     else
@@ -52,7 +48,13 @@ int get_message(int sockfd)
         }
         printf("%d\n",number);
         buf_ptr++;
-        is_connected = handle_message(buf_ptr, number);
+        message_s * response = handle_message(number, buf_ptr);
+        if (response)
+        {
+            send_message(sockfd, response);
+            free(response);
+        }
+
     }
     return is_connected;
 }

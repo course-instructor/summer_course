@@ -21,4 +21,3 @@ extern room_s *room1;
 extern int    g_current_clients;
 
 void *handle_client(void *arg);
-

@@ -5,7 +5,6 @@
 
 int send_signup_message(int sockfd, const char *name, const char *password)
 {
-    printf("sending signup: %s , %s\n", name ,password);
     message_s message;
     message.param_count = 2;
     message.request_num = SIGN_UP;
