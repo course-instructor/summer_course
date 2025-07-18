@@ -15,16 +15,19 @@ extern room_s g_rooms [ROOM_COUNT];
 
 int handle_message(char * buf, int num)
 {
-    printf("got: %s",buf);
+    printf("got: %s\n",buf);
     int is_connected = 1;
+    int reading_index = 0;
     switch (num)
     {
     case SIGN_UP:
         printf("recived signup\n");
         char name [MESSAGE_LENGTH];
-        buf += get_param(buf,name);
+        get_param(buf,name, &reading_index);
+        printf("name: %s\n", name);
         char pass [MESSAGE_LENGTH];
-        get_param(buf,pass);
+        get_param(buf,pass, &reading_index);
+        printf("pass: %s\n", pass);
 
         int success = handle_signup(name,pass);
 

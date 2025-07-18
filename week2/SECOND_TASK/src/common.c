@@ -34,15 +34,15 @@ int get_message(int sockfd)
     int is_connected = 1;
 
 
-    int number = 0;
-
-    if ((numbytes = recv(sockfd, buf, MESSAGE_LENGTH, 0)) == -1)
+    numbytes = recv(sockfd, buf, MESSAGE_LENGTH, 0);
+    if (numbytes <= 0)
     {
         printf("connection lost");
         is_connected = 0;
     }
     else
     {
+        int number = 0;
 
         while (*(buf_ptr ) != SEPERATING_CHAR)
         {
@@ -64,21 +64,21 @@ void *get_in_addr(const struct sockaddr *sa) {
         return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int get_param(const char * buf, char * ret)
+int get_param(const char * buf, char * ret, int * index_ptr)
 {
     int end_flag = 0;
-    char * seperting = strchr(END_CHAR);
+    int i=0;
 
-    strncpy(ret, buf, )
-
-    strcpy(ret,buf)
-
-    int length = strchr(buf,SEPERATING_CHAR);
-
-    buf += length + 1;
-    if(*(buf) == END_CHAR)
+    while(buf[*index_ptr] != SEPERATING_CHAR)
     {
-        *(buf) = '\0';
+        ret[i++] = buf[*index_ptr];
+        (*index_ptr)++;
+    }
+
+    ret[i] = '\0';
+    (*index_ptr) ++;
+    if(buf[*index_ptr] == END_CHAR)
+    {
         end_flag = 1;
     }
 

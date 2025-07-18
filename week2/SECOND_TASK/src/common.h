@@ -49,4 +49,4 @@ int send_message(int sockfd, const message_s *message);
 int get_message(int sockfd);
 
 void *get_in_addr(const struct sockaddr *sa);
-int   get_param(const char *buf, char *ret);
+int get_param(const char * buf, char * ret, int * index_ptr);
