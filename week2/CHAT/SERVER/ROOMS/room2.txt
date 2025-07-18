@@ -1,0 +1,10 @@
+[SERVER] User "ASHER" has joined the room.
+[ASHER] hi
+[SERVER] User "ABCD" has joined the room.
+[ABCD] HOW YOU DOING MA MAN
+[ABCD] ma boy
+[ABCD] ma man
+[ABCD] ma boy
+[ABCD] do you hear me
+[ABCD] come on
+[ABCD] answer
