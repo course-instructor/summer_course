@@ -116,15 +116,12 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 
 
 
-
         if(success)
         {
             message_s * broadcast_message = create_message("has entered room",name);
             broadcast(& g_rooms[client->room_index], client, broadcast_message);
             free(broadcast_message);
             message->params = SUCCESS;
-            printf("success\n");
-
         }
 
         else
@@ -164,7 +161,6 @@ message_s * handle_exit_room(const char * buf,client_s * client)
 
 message_s * handle_send_to_room(const char *buf, client_s * client)
 {
-    printf("in %s\n", __FUNCTION__);
     message_s * message = malloc(sizeof(message_s));
     message->request_num = MESSAGE_FROM_CLIENT;
     message->param_count = 2;
@@ -204,7 +200,6 @@ message_s * handle_message(int num, const char * buf, void * ptr)
             break;
         case ENTER_ROOM:
             response_message = handle_enter_room(buf, client);
-            printf("%p\n", response_message);
             break;
         case MESSAGE_ROOM:
             // response_message = handle_send_
@@ -314,7 +309,7 @@ message_s * handle_room_lst_message(client_s * client)
 
 int process_enter_room(client_ptr_t client,int room_num)
 {
-    printf("in enter room %d\n", room_num);
+
     int enter_room_error = 0;
     if((client -> status) == CONNECTED && room_num < ROOM_COUNT)
     {
@@ -327,7 +322,6 @@ int process_enter_room(client_ptr_t client,int room_num)
 
 int proccess_exit_room(client_s * client)
 {
-    printf("in exit room \n");
     int enter_room_error = 0;
     if((client -> status) == IN_ROOM)
     {
