@@ -66,32 +66,34 @@ message_s * handle_message(int num, const char * buf, void * )
             }
             break;
 
-        // case (MESSAGE_FROM_CLIENT):
-        //     char * name;
-        //     char * message;
+        case MESSAGE_FROM_CLIENT:
+            char name [MESSAGE_LENGTH];
+            char message[MESSAGE_LENGTH];
 
-        //     get_param(buf, name);
-        //     get_param(buf, message);
+            int index = 0;
 
-        //     printf("%s: %s\n", name, message);
-        //     break;
+            get_param(buf, name, &index);
+            get_param(buf, message, &index);
 
-        // case (MESSAGE_FROM_SERVER):
+            printf("%s: %s\n", name, message);
+            break;
+
+        // case MESSAGE_FROM_SERVER:
         //     printf("server: %s\n" , buf);
         //     break;
 
-        // case (EXIT_ROOM_RESPONSE):
-        //     if(buf[i] == '0') //success
-        //     {
-        //         printf("logged in sucssesfully\n");
-        //         g_level = LOG_IN;
-        //     }
+        case EXIT_ROOM_RESPONSE:
+            if(buf[i] == '0') //success
+            {
+                printf("exited room\n");
+                g_level = CONNECTED;
+            }
 
-        //     else//failed (-1)
-        //     {
-        //         printf("logged in un-sucssesfully\n");
-        //     }
-        //     break;
+            else//failed (-1)
+            {
+                printf("didnt exit room\n");
+            }
+            break;
 
         default:
             perror("invalid message number\n");

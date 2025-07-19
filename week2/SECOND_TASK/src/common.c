@@ -17,6 +17,11 @@ int send_message(int sockfd, const message_s *message)
         pos += snprintf(payload + pos, sizeof payload - pos, "%s%c",  message->params[i], SEPERATING_CHAR);
     }
     payload[pos++] = END_CHAR;
+    if(message->request_num == 204)
+    {
+        payload[pos] = '\0';
+        printf("payload:   %s\n",payload);
+    }
     return send(sockfd, payload, pos, 0);
 }
 

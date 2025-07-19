@@ -9,19 +9,6 @@
 
 extern room_s g_rooms [ROOM_COUNT];
 
-message_s * create_message(const char* str, const char * name)
-{
-    message_s * message = malloc(sizeof(message_s));
-    message->request_num = MESSAGE_FROM_CLIENT;
-    message->param_count = 2;
-
-    const char * temp [2] = {name,str};
-
-    message->params = temp;
-
-    return message;
-}
-
 message_s * handle_signup(const char * buf)
 {
     printf("recived signup\n");
@@ -118,9 +105,9 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 
         if(success)
         {
-            message_s * broadcast_message = create_message("has entered room",name);
-            broadcast(& g_rooms[client->room_index], client, broadcast_message);
-            free(broadcast_message);
+            // message_s * broadcast_message = create_message("has entered room",name);
+            broadcast(& g_rooms[client->room_index], client, name, "has entered room");
+            // free(broadcast_message);
             message->params = SUCCESS;
         }
 
@@ -147,9 +134,9 @@ message_s * handle_exit_room(const char * buf,client_s * client)
 
     if(success)
     {
-        message_s * broadcast_message = create_message("has left room",name);
-        broadcast(& g_rooms[client->room_index], client, broadcast_message);
-        free(broadcast_message);
+        // message_s * broadcast_message = create_message("has left room",name);
+        broadcast(& g_rooms[client->room_index], client, name, "has left room");
+        // free(broadcast_message);
         message->params = SUCCESS;
     }
     else
@@ -161,9 +148,9 @@ message_s * handle_exit_room(const char * buf,client_s * client)
 
 message_s * handle_send_to_room(const char *buf, client_s * client)
 {
-    message_s * message = malloc(sizeof(message_s));
-    message->request_num = MESSAGE_FROM_CLIENT;
-    message->param_count = 2;
+    // message_s * message = malloc(sizeof(message_s));
+    // message->request_num = MESSAGE_FROM_CLIENT;
+    // message->param_count = 2;
 
     int reading_index = 0;
 
@@ -173,11 +160,11 @@ message_s * handle_send_to_room(const char *buf, client_s * client)
     char str[MESSAGE_LENGTH];
     get_param(buf, str, &reading_index);
 
-    const char * temp [2] = {name,str};
+    // const char * temp [2] = {name,str};
 
-    message->params = temp;
+    // message->params = temp;
 
-    broadcast(& g_rooms[client->room_index] , client, message);
+    broadcast(& g_rooms[client->room_index] , client, name, str);
 
     return NULL;
 }
@@ -202,7 +189,7 @@ message_s * handle_message(int num, const char * buf, void * ptr)
             response_message = handle_enter_room(buf, client);
             break;
         case MESSAGE_ROOM:
-            // response_message = handle_send_
+            response_message = handle_send_to_room(buf, client);
             break;
         case EXIT_ROOM:
             response_message = handle_exit_room(buf,client);

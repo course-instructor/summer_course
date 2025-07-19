@@ -33,5 +33,5 @@ client_list_t innit_clients(void);
 void room_add_client(room_s *room, client_ptr_t client);
 void room_rem_client(room_s *room, client_ptr_t client);
 
-void broadcast(room_s *room, client_ptr_t ignore, message_s * message);
+void broadcast(room_s *room, client_ptr_t ignore, const char * name, const char * str);
 void innit_g_rooms(void);

@@ -67,8 +67,26 @@ void room_rem_client(room_s *room, client_ptr_t client)
     pthread_mutex_unlock(& room->mutex);
 }
 
-void broadcast(room_s *room, client_ptr_t ignore, message_s * message)
+void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* str)
 {
+
+    message_s * message = malloc(sizeof(message_s));
+    message->request_num = name ? MESSAGE_FROM_CLIENT : MESSAGE_FROM_SERVER;
+    message->param_count = name ? 2 : 1;
+
+    const char * temp [2];
+    if (name)
+    {
+        temp[0] = name;
+        temp[1] = str;
+    }
+    else
+    {
+        temp[0] = str;
+    }
+
+    message->params = temp;
+
     pthread_mutex_lock(& room->mutex);
 
     for (client_list_t cur = room->clients; cur; cur = cur->next)

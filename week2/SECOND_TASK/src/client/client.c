@@ -144,8 +144,8 @@ void * get_input(void * arg)
 
             else
             {
-                // char str [MESSAGE_LENGTH];
-                // send_in_room_message(sockfd,name, str);
+                char str [MESSAGE_LENGTH];
+                send_in_room_message(sockfd,name, str);
             }
         }
 
