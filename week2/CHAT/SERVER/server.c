@@ -29,7 +29,7 @@
 
 
 
-int receive_message(int sockfd, message *msg, size_t data_size) 
+int receive_message(int sockfd, message *msg) 
 {
 	
 	char buf[sizeof(message)];
@@ -43,7 +43,7 @@ int receive_message(int sockfd, message *msg, size_t data_size)
 	if(num_bytes == 0)
 	{
 		printf("disconnected!\n");
-		return -2;
+		return DISCONNECT;
 	}
 
 
@@ -160,16 +160,49 @@ void CreateAndBindSockets(struct addrinfo *servinfo, int * pSockfd)
 
 
 }
+void newUserThread(int * threads_flags_is_running,int sockfd,struct args_s thread_arguments)
+{
+	pthread_t thread;
+	
+
+	thread_arguments.sockfd = sockfd;
+	thread_arguments.thread_id = -1;
+
+	for (int i = 0; i < MAX_CONNECTIONS; i++)
+	{
+		if(threads_flags_is_running[i] == 0)
+		{
+			threads_flags_is_running[i] = 1;
+			thread_arguments.thread_id = i;
+			thread_arguments.is_running = &threads_flags_is_running[i];
+			printf("ttthread : %d \n",thread_arguments.thread_id );
+			break;
+		}
+	}
+	if(thread_arguments.thread_id == -1)
+	{
+		printf("connections full. connection declined.\n");
+		send(sockfd,"connections full. sorry!",MAXDATASIZE,0);
+
+		close(sockfd);
+	}
+	else
+	{
+		send(sockfd,WELCOME_MASSAGE,MAXDATASIZE,0);
+		pthread_create(&thread, NULL, (void*)userHandle,(void*)&thread_arguments);
+		pthread_detach(thread);
+	}
+
+}
 
 void socketListener(int sockfd)
 {
     int new_fd;
     socklen_t sin_size;
+	struct args_s thread_arguments;
     struct sockaddr_storage their_addr; /*connector's address information*/ 
-    char s[INET6_ADDRSTRLEN];
-	pthread_t thread;
+    char s[INET6_ADDRSTRLEN] /*ipv6 size , becuse it could be ipv4 and ipv6 so to take into account them both I use the bigger size*/;
 	int threads_id[MAX_CONNECTIONS] = {0};
-	char buf[BUF_SIZE];
 
     /* lisen to incoming messages */
     if (listen(sockfd, MAX_CONNECTIONS) == -1) {
@@ -189,33 +222,11 @@ void socketListener(int sockfd)
 			getInAddr((struct sockaddr *)&their_addr),
 			s, sizeof s);
 		printf("server: got connection from %s\n", s);
-		struct args_s thread_arguments;
 
-		thread_arguments.sockfd = new_fd;
-		thread_arguments.thread_id = -1;
-
-		for (int i = 0; i < MAX_CONNECTIONS; i++)
-		{
-			if(threads_id[i] == 0)
-			{
-				threads_id[i] = 1;
-				thread_arguments.thread_id = i;
-				break;
-			}
-		}
-		if(thread_arguments.thread_id == -1)
-		{
-			printf("connections full. sorry!\n");
-			close(new_fd);
-		}
-		else
-		{
-			pthread_create(&thread, NULL, (void*)userHandle,(void*)&thread_arguments);
-			
-		}
+		newUserThread(threads_id,new_fd,thread_arguments);
 		
 	}
-
+		close(new_fd);
 		exit(0);
 }
 
@@ -233,7 +244,6 @@ int main(void)
     socketListener(sockfd);
 
 	
-	//register_request();
 
 	return 0;
 }

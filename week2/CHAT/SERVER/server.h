@@ -11,8 +11,10 @@
 enum status_e
 {
     SUCCESS =  0,
-    FAILURE  = -1
+    FAILURE  = -1,
+	DISCONNECT = -2
 };
+
 enum request_code_e
 {
 	REQUEST_REGISTER	= 100,
@@ -64,7 +66,6 @@ typedef struct user_t
 	char username[BUF_SIZE];
 	char password[PASSWORD_BUFFER_SIZE];
 	char room[BUF_SIZE];
-    int room_id;
     enum access_hierarchy_e access_level;
 
 }user;
@@ -85,6 +86,7 @@ typedef struct messege_t
 struct args_s {
     int sockfd;
     int thread_id;
+    int * is_running;
 };
 
 
@@ -92,16 +94,16 @@ struct args_s {
 
 int register_user		(int thread_id ,char *output ,char * username , char * password);
 int login_user			(int thread_id ,char * output,char * username , char * password);
-int getRooms_user		(int thread_id ,char *output, void * arg1, void * arg2);
+int getRooms_user		(int thread_id ,char *output);
 int joinRoom_user       (int thread_id ,char * username, char * room_name);
 int send_user			(int thread_id, char * output,char * msg);
-int exit_user           (int thread_id);
+int exit_user           (int thread_id,char * output);
 
-int userHandle(void * arguments);
+void userHandle(void * arguments);
 
-int receive_message(int sockfd, message *msg, size_t data_size);
+int receive_message(int sockfd, message *msg);
 int send_message(int sockfd, const message *msg, size_t data_size);
-int multicast_messege(int thread_id,char * msg_data,int msg_length);
+void multicast_messege(int thread_id,char * msg_data,int msg_length);
 
 int getRooms_request(int sockfd);
 int joinRoom_request(int sockfd,user cur_user);

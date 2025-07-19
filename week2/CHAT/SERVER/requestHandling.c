@@ -16,11 +16,12 @@
 #define USERS_FILE_PATH "users.txt"
 #define ROOM_FOLDER_PATH "./ROOMS"
 
-#define ERROR_MESSEGE_NAME_UNSPECIFIED  "name is not specified."
-#define ERROR_MESSEGE_NAME_EXISTS "user with this name does not exists."
-#define ERROR_MESSEGE_INCORRECT_PASSWORD "incorrect password."
+#define ERROR_MESSEGE_NAME_UNSPECIFIED  "Name is not specified."
+#define ERROR_MESSEGE_NAME_EXISTS "User with this name does not exists."
+#define ERROR_MESSEGE_INCORRECT_PASSWORD "Incorrect password."
+#define ERROR_MESSEGE_ALREDY_LOGGED_IN "This user is currently logged in."
 
-#define AMOUNT_OF_REQUESTS 7
+#define AMOUNT_OF_REQUESTS 6
 
 
 #define USERNAME_SIZE USERNAME_BUFFER_SIZE*sizeof(char)
@@ -46,74 +47,90 @@ static const request requests[AMOUNT_OF_REQUESTS] =
     
 };
 
-user connected_users[MAX_CONNECTIONS];
+user * connected_users[MAX_CONNECTIONS];
 int room_lock = 0;
 
 /**
  * @brief thread for handling users requests
  * @param thread_id and file discriptor
  */
-int userHandle(void * arguments)
+void userHandle(void * arguments)
 {
     struct args_s *args = (struct args_s *)arguments;
     int thread_id = args->thread_id;
     int sockfd = args->sockfd;
+    int * is_running = args->is_running;
     printf("thread_id : %d\n",thread_id);
-    connected_users[thread_id].sockfd = sockfd;
-    connected_users[thread_id].access_level = EVERY_USER;
-
+    connected_users[thread_id] = malloc(sizeof(user));
+    connected_users[thread_id]->sockfd = sockfd;
+    connected_users[thread_id]->access_level = EVERY_USER;
     message recv_msg,send_msg;
     request rq;
 
     int status = SUCCESS;
-    char output[MAXDATASIZE] = "NO DATA";
+    char output[MAXDATASIZE];
     while(1)
     {
-    memset(output,0,MAXDATASIZE);
+        memset(output,0,MAXDATASIZE);
 
-    /* get the messege*/
-    if(receive_message(sockfd,&recv_msg,MAXDATASIZE) == -2)
-    {
-        break;
-    }
+        /* get the messege*/
+        if(receive_message(sockfd,&recv_msg) == -2)
+        {
+            free(connected_users[thread_id]);
+            break;
+        }
 
-    if(recv_msg.opcode <100 || recv_msg.opcode >106 )
-    {
-        printf("invalid opcode\n");
-        continue;
-    }
-
-    /*get arguments */
-
-    rq = requests[recv_msg.opcode-100];
-    if(rq.access > connected_users[thread_id].access_level)
-    {
-        printf("user access level is too low\n");
-        continue;
-    }
-    char * args[2];
-    char* token;
-    char* rest = recv_msg.data;
-    for (int i = 0; i < rq.argc; i++)
-    {
-        token = strtok_r(rest, "\t", &rest);
-        args[i] = token;
-
-    }
+        if(recv_msg.opcode <100 || recv_msg.opcode >106 )
+        {
+            printf("invalid opcode\n");
+            continue;
+        }
+        /* get request from recived messege's opcode*/
+        for (int i = 0; i < AMOUNT_OF_REQUESTS; i++)
+        {
+            if(requests[i].request_code == recv_msg.opcode)
+            {
+                rq = requests[i];
+                break;
+            }
+            
+        }
         
-    /*Do something*/
-    status = rq.operation(thread_id,output,args[0],args[1]);
+        if(rq.access > connected_users[thread_id]->access_level)
+        {
+            printf("user access level is too low. required : %d  , got: %d\n",rq.access ,connected_users[thread_id]->access_level );
+            continue;
+        }
+
+        /*get arguments */
+        char * args[2];
+        char* token;
+        char* rest = recv_msg.data;
+        for (int i = 0; i < rq.argc; i++)
+        {
+            token = strtok_r(rest, "\t", &rest);
+            args[i] = token;
+
+        }
+            
+        /*Do local operation on the server siide*/
+        status = rq.operation(thread_id,output,args[0],args[1]);
 
 
-    /* send the messge*/
-    send_msg.opcode = rq.replay_code;
-    send_msg.status = status;
-    strcpy(send_msg.data,output);
-    send_message(sockfd,&send_msg,MAXDATASIZE);
+        /* send the messge*/
+        send_msg.opcode = rq.replay_code;
+        send_msg.status = status;
+        strncpy(send_msg.data,output,MAXDATASIZE);
+        if(send_message(sockfd,&send_msg,MAXDATASIZE) == FAILURE)
+        {
+            printf("couldnt send the messege");
+            continue;
+        }
 
 
     }
     
+    *is_running = 0;
 
 }
 
@@ -150,9 +167,9 @@ int register_user(int thread_id,char *output ,char * username , char * password)
     }
 
     /* update user */
-    strncpy(connected_users[thread_id].username, username,BUF_SIZE);
-    strncpy(connected_users[thread_id].password, password,BUF_SIZE);
-    connected_users[thread_id].access_level = CONNECTED_USER;
+    strncpy(connected_users[thread_id]->username, username,BUF_SIZE);
+    strncpy(connected_users[thread_id]->password, password,BUF_SIZE);
+    connected_users[thread_id]->access_level = CONNECTED_USER;
 
     memset(output,0,MAXDATASIZE);     /* overwrite data */
     snprintf(output,MAXDATASIZE,"%s %s",username,password);
@@ -169,39 +186,56 @@ int register_user(int thread_id,char *output ,char * username , char * password)
  */
 int login_user(int thread_id,char * output,char * username , char * password)
 {
+    int status = FAILURE;
     user logging_user;
+    int alredy_logged = 0;
+    for (int i = 0; i < MAX_CONNECTIONS && alredy_logged; i++)
+    {
+        if(strncmp(connected_users[thread_id]->username,username,BUF_SIZE)==0)
+        {
+            alredy_logged = 1;
+        }
+        /* code */
+    }
+    
     if(username == NULL)
     {
         fprintf(stderr, "users: %s\n",ERROR_MESSEGE_NAME_UNSPECIFIED);
         snprintf(output,MAXDATASIZE,"%s",ERROR_MESSEGE_NAME_UNSPECIFIED);
-        return FAILURE;
     }
-    if(findUserByUsername(username,&logging_user) == FAILURE)
+    else if(findUserByUsername(username,&logging_user) == FAILURE)
     {
         fprintf(stderr, "users: %s.\n",ERROR_MESSEGE_NAME_EXISTS);
         snprintf(output,MAXDATASIZE,"%s",ERROR_MESSEGE_NAME_EXISTS);
-        return FAILURE;
     }
+    else if(strncmp(logging_user.password, password, PASSWORD_BUFFER_SIZE)!=0)
+    {
+        fprintf(stderr,"users: %s\n",ERROR_MESSEGE_INCORRECT_PASSWORD);
+        snprintf(output,MAXDATASIZE,"%s",ERROR_MESSEGE_INCORRECT_PASSWORD);
+
+    }
+    else if(alredy_logged == 1)
+    {
+        fprintf(stderr,"users: %s\n",ERROR_MESSEGE_ALREDY_LOGGED_IN);
+        snprintf(output,MAXDATASIZE,"%s",ERROR_MESSEGE_ALREDY_LOGGED_IN);
+
+
+    }
+
     else
     {
-        printf("%s %s", password, logging_user.username);
-        if(strncmp(logging_user.password, password, PASSWORD_BUFFER_SIZE)!=0)
-        {
-            fprintf(stderr,"users: %s\n",ERROR_MESSEGE_INCORRECT_PASSWORD);
-            snprintf(output,MAXDATASIZE,"%s",ERROR_MESSEGE_INCORRECT_PASSWORD);
+         /* update user */
+        strncpy(connected_users[thread_id]->username, username,BUF_SIZE);
+        strncpy(connected_users[thread_id]->password, password,BUF_SIZE);
+        connected_users[thread_id]->access_level = CONNECTED_USER;
 
-            return FAILURE;
-        }
+        memset(output,0,MAXDATASIZE);     /* overwrite data */
+        snprintf(output,MAXDATASIZE,"%s %s",username,password);
+        status = SUCCESS;   
 
     }
-    /* update user */
-    strncpy(connected_users[thread_id].username, username,BUF_SIZE);
-    strncpy(connected_users[thread_id].password, password,BUF_SIZE);
-    connected_users[thread_id].access_level = CONNECTED_USER;
-
-    memset(output,0,MAXDATASIZE);     /* overwrite data */
-    snprintf(output,MAXDATASIZE,"%s %s",username,password);
-    return SUCCESS;
+   
+    return status;
     
 
 }
@@ -211,7 +245,7 @@ int login_user(int thread_id,char * output,char * username , char * password)
  * @brief get rooms from database
  * @return SUCCESS or FAILURE
  */
-int getRooms_user(int thread_id,char *output, void * arg1, void * arg2)
+int getRooms_user(int thread_id,char *output)
 {
     room * rooms[ROOMS_AMOUNT];
     int i;
@@ -224,7 +258,7 @@ int getRooms_user(int thread_id,char *output, void * arg1, void * arg2)
         output = strncat(output," ",2);
 
     }
-    
+    memset(connected_users[thread_id]->room,0,BUF_SIZE);
     return SUCCESS;// TODO : check status
     
 }
@@ -237,17 +271,26 @@ int joinRoom_user(int thread_id,char * output, char * room_name)
 {
     room r;
     FILE * room_file;
+    int status = FAILURE;
+    char str [MAXDATASIZE];
     if(getRoomByName(&r,room_name) == FAILURE)
     {
-        return FAILURE;
+        snprintf(output,MAXDATASIZE,"Room with the name [%s] does not exists",room_name); /*pass error messege to client*/
+        status = FAILURE;
     }
+    else
+    {
     room_file = fopen(r.room_file_path,"a");
-    fprintf(room_file, "[SERVER] User \"%s\" has joined the room.\n",connected_users[thread_id].username);
+    fprintf(room_file, "[SERVER] User \"%s\" has joined the room.\n",connected_users[thread_id]->username);
     fclose(room_file);
-    strncpy(connected_users[thread_id].room,room_name,BUF_SIZE);
-    connected_users[thread_id].access_level = IN_ROOM_USER;
+    strncpy(connected_users[thread_id]->room,room_name,BUF_SIZE);
+    connected_users[thread_id]->access_level = IN_ROOM_USER;
+    snprintf(str,MAXDATASIZE,"(User \"%s\" has joined the room.)",connected_users[thread_id]->username);
+    multicast_messege(thread_id,str,MAXDATASIZE);
+    status = SUCCESS;
+    }
     
-    return SUCCESS;
+    return status;
 }
 
 /**
@@ -258,35 +301,51 @@ int send_user(int thread_id, char * output,char * msg)
 {
     room r;
     FILE * room_file;
-    if(getRoomByName(&r,connected_users[thread_id].room) == FAILURE)
+    int status = FAILURE;
+    if(getRoomByName(&r,connected_users[thread_id]->room) == FAILURE)
     {
-        return FAILURE;
+        fprintf(stderr,"Room [%s] is not found.\n",connected_users[thread_id]->room);
+        snprintf(output,MAXDATASIZE,"Room [%s] is not found.",connected_users[thread_id]->room);
     }
-    room_file = fopen(r.room_file_path,"a");
-    fprintf(room_file, "[%s] %s\n",connected_users[thread_id].username,msg);
-    fclose(room_file);
+    else
+    {
+        room_file = fopen(r.room_file_path,"a");
+        fprintf(room_file, "[%s] %s\n",connected_users[thread_id]->username,msg);
+        
+        fclose(room_file);
+        multicast_messege(thread_id,msg,MAXDATASIZE);
+
+    }
 
 
-
-    return SUCCESS;
+    return status;
 }
 
 /**
  * @brief exits a room
  */
-int exit_user(int thread_id)
+int exit_user(int thread_id,char * output)
 {
     room r;
     FILE * room_file;
-    if(getRoomByName(&r,connected_users[thread_id].room) == FAILURE)
+    if(getRoomByName(&r,connected_users[thread_id]->room) == FAILURE)
     {
         fprintf(stderr,"users: couldnt get room\n");
         return FAILURE;
     }
     room_file = fopen(r.room_file_path,"a");
-    fprintf(room_file, "[SERVER] User \"%s\" has exited the room.\n",connected_users[thread_id].username);
+    fprintf(room_file, "[SERVER] User \"%s\" has exited the room.\n",connected_users[thread_id]->username);
 
     fclose(room_file);
+
+    /* send messege to users that this user has exited this room*/
+    snprintf(output,MAXDATASIZE,"(User \"%s\" has exited the room.)",connected_users[thread_id]->username);
+    multicast_messege(thread_id,output,MAXDATASIZE);
+    
+    /*update current user*/
+    connected_users[thread_id]->access_level = CONNECTED_USER;
+    memset(connected_users[thread_id]->room ,0,BUF_SIZE);
+
     return SUCCESS;
 }
 /**
@@ -327,7 +386,6 @@ int findUserByUsername(char * username,user *saved_user)
 {
 
 	FILE * file;
-    char * saved_username,saved_password;
 	int is_found = FAILURE;
     char buf[BUF_SIZE+PASSWORD_BUFFER_SIZE+1];
     char *rest;
@@ -388,7 +446,6 @@ void getRooms(room *rooms[ROOMS_AMOUNT]) {
 
             snprintf(full_path, sizeof(full_path), "%s/%s", ROOM_FOLDER_PATH, (char*)dir->d_name);
 
-            name_copy[FILE_NAME_BUFF_SIZE];
             strncpy(name_copy, dir->d_name, FILE_NAME_BUFF_SIZE - 1);
             name_copy[FILE_NAME_BUFF_SIZE - 1] = '\0';
 
@@ -403,7 +460,6 @@ void getRooms(room *rooms[ROOMS_AMOUNT]) {
             strncpy(rooms[room_count]->room_name, base_name, FILE_NAME_BUFF_SIZE - 1);
             rooms[room_count]->room_name[FILE_NAME_BUFF_SIZE - 1] = '\0';
 
-            printf("Room: %s (Path: %s)\n", rooms[room_count]->room_name, rooms[room_count]->room_file_path);
             room_count++;
         }
     }
@@ -418,7 +474,6 @@ int getRoomByName(room * room_output,char * room_name)
     DIR *d;
     FILE * room_file;
     struct dirent *dir;
-    char line[BUF_SIZE];
     char * rest;
     char *file_name;
     char room_folder[32] = ROOM_FOLDER_PATH;
@@ -464,13 +519,13 @@ int getRoomByName(room * room_output,char * room_name)
  * @brief sends messege to multiple users that are in the same room as the current user, 
  * this function can be used by only one thread at a time
  */
-int multicast_messege(int thread_id,char * msg_data,int msg_length)
+void multicast_messege(int thread_id,char * msg_data,int msg_length)
 {
-    user * current_user = &connected_users[thread_id];
+    user * current_user = connected_users[thread_id];
     message send_msg;
     send_msg.opcode = REPLY_UPDATE;
     send_msg.status = SUCCESS;
-    snprintf(send_msg.data, MAXDATASIZE,"[%s] %s",current_user->username,msg_data);
+    snprintf(send_msg.data, msg_length,"[%s] %s",current_user->username,msg_data);
 
 
     while(room_lock == 1)
@@ -478,15 +533,17 @@ int multicast_messege(int thread_id,char * msg_data,int msg_length)
         sleep(100);
     }
     
-    
     for (int i = 0; i < MAX_CONNECTIONS; i++)
     {
-        if(thread_id != i && strncmp(current_user->room,connected_users[i].room,BUF_SIZE) == 0)
+        if(thread_id != i && connected_users[i]!= NULL && strncmp(current_user->room,connected_users[i]->room,BUF_SIZE) == 0)
         {
-            send_message(connected_users->sockfd,&send_msg,MAXDATASIZE);
+            send_message(connected_users[i]->sockfd,&send_msg,MAXDATASIZE);
         }
+
     }
+
     room_lock = 0;
     
 
 }
+

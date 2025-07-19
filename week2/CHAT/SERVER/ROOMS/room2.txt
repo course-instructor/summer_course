@@ -8,3 +8,14 @@
 [ABCD] do you hear me
 [ABCD] come on
 [ABCD] answer
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has exited the room.
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has exited the room.
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has exited the room.
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has exited the room.
+[SERVER] User "ASHER" has joined the room.
+[SERVER] User "ASHER" has exited the room.

@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#define EXIT_COMMAND "/exit"
 
 #define MAXDATASIZE 256 // max number of bytes we can get at once 
 #define ROOMS_AMOUNT 5
@@ -58,21 +59,23 @@ enum access_hierarchy_e
 enum status_e
 {
     SUCCESS =  0,
-    FAILURE  = -1
+    FAILURE  = -1,
+	DISCONNECT = -2
 };
 
 
 typedef struct messege_t
 {
-    u_int32_t opcode;
-	enum status_e status;
-	char data[MAXDATASIZE];
+    u_int32_t opcode; /* messege code */
+	enum status_e status; /*operation status (SUCCESS/FAILURE/etc)*/
+	char data[MAXDATASIZE]; /*the data itself , not required*/
 }message;
 
 
+/*Represent a converstion between client and server in which client sends a request, server processing it, and sends replay*/
 typedef struct request_t
 {
-    enum request_code_e request_code;
+    enum request_code_e request_code; 
     enum reply_code_e replay_code;
     enum access_hierarchy_e access;
     int argc;
@@ -81,29 +84,31 @@ typedef struct request_t
 }request;
 
 
-int establish_connection(char * address);
-void clientSide(int argc,char *argv[]);
+int establish_connection(char * address,int *sockfd);
+int clientSide(int argc, char *argv[]);
 int sendRequest(request * rq, message * send_msg,message * recv_msg,int sockfd);
-int receive_message(int sockfd, message *msg, size_t data_size);
+int receive_message(int sockfd, message *msg);
 int sendRequest(request * rq, message * send_msg,message * recv_msg,int sockfd);
 int sign_request(int choice,int sockfd);
 
 
 void userInterface(int * sockfd);
 int choose_sign_option(void);
-int choose_room_option(int sockfd, char * room);
+int choose_room_option(int sockfd);
 int chat_screen(int sockfd);
 
 
 /*Chat */
+
 void recive_update(int * sockfd);
 
+/*local logical functions*/
 
 int register_user       (char * output, char * username , char * password);
 int login_user			(char * output,char * username , char * password);
-int getRooms_user		(char *output, char * rooms, void * arg2);
+int getRooms_user		(void);
 int joinRoom_user       (char * room_name);
-int send_user           (char * msg,void * arg1, void* arg2);
+int send_user           (char * output);
 int exit_user           (void);
 
 #endif

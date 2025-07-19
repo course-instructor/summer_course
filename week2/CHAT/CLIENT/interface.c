@@ -1,3 +1,6 @@
+#define _XOPEN_SOURCE 600 
+/*the reason why I left it here anyway: https://stackoverflow.com/a/23961526 , or basiclly to get rid of annoying warning.
+I hate those silly warrnings D:< */
 #include <stdio.h>
 #include "client.h"
 #include <ctype.h>
@@ -17,6 +20,8 @@ static const request requests[AMOUNT_OF_REQUESTS] =
 	{REQUEST_SEND		,REPLY_SEND		,	IN_ROOM_USER	,	1	,send_args		,	(void *)&send_user		},
 	{REQUEST_EXIT		,REPLY_EXIT		,	IN_ROOM_USER	,	0	,NULL   		,	(void *)&exit_user		}
 };
+int is_chat_open=0;
+
 /**
  * @brief main thread to handle users input and requests
  */
@@ -24,9 +29,7 @@ void userInterface(int *sockfd)
 {
     int sign_choice;
     int status = FAILURE;
-
-    char room[BUF_SIZE];
-    char room_to_join[BUF_SIZE];
+    pthread_t chat_thread;
     /*Sign Screen*/
     while(status == FAILURE)
     {
@@ -36,19 +39,25 @@ void userInterface(int *sockfd)
     status = FAILURE;
 
     /*rooms Screen*/
-    while(choose_room_option(*sockfd,room)==FAILURE);
-
-    /* chat screen*/
-    
-    pthread_t chat_thread;
-    pthread_create(&chat_thread,NULL,(void*)recive_update,sockfd);
-    pthread_detach(chat_thread);
-    
-
-    while(chat_screen(*sockfd) == SUCCESS)
+    while(1)
     {
+        while(choose_room_option(*sockfd)==FAILURE);
 
-    }  
+        /* chat screen*/
+        
+        is_chat_open = 1;
+        pthread_create(&chat_thread,NULL,(void*)recive_update,sockfd);
+        pthread_detach(chat_thread);
+        
+        printf("(To exit chat write [%s].)\n",EXIT_COMMAND);
+        while(is_chat_open == 1 && chat_screen(*sockfd) == SUCCESS);
+        pthread_cancel(chat_thread);
+
+    }
+
+
+    
+   
 
 }
 
@@ -58,43 +67,59 @@ void userInterface(int *sockfd)
  */
 int chat_screen(int sockfd)
 {
+    int status;
     message send_msg,recv_msg;
-    request rq = requests[NUM_SEND];
-    return sendRequest(&rq,&send_msg,&recv_msg,sockfd);
+    request rq;
+    rq = requests[NUM_SEND];
+
+    sendRequest(&rq,&send_msg,&recv_msg,sockfd);
+    status = recv_msg.status;
+    if(recv_msg.opcode == REPLY_EXIT)
+    {
+        printf("THIS WAY\n");
+        is_chat_open = 0;
+        status = DISCONNECT;
+    }
+    return status;
 }
 /**
  * @brief choose room to join
  */
-int choose_room_option(int sockfd, char * room)
+int choose_room_option(int sockfd)
 {
     message send_msg,recv_msg;
     request rq = requests[NUM_GET_ROOM];
-    int status = sendRequest(&rq,&send_msg,&recv_msg,sockfd);
-    if(status == FAILURE)
-    {
-        return FAILURE;
-    }
+
     char rooms[ROOMS_AMOUNT][BUF_SIZE];
     char* token;
     char* rest = recv_msg.data;
-    char input;
-    int choice;
     int count = 0;
-    while ((token = strtok_r(rest, " ", &rest)))
-    {
-        strncpy(rooms[count],token,BUF_SIZE);
-        printf("%d. %s\n", count++ + 1,token);
-
-    }
-
-    
-    rq = requests[NUM_JOIN_ROOM];
-    status = sendRequest(&rq,&send_msg,&recv_msg,sockfd);
+    sendRequest(&rq,&send_msg,&recv_msg,sockfd);
+    int status = recv_msg.status;
     if(status == SUCCESS)
     {
-        printf("---JOINING ROOM---\n");
+        while ((token = strtok_r(rest, " ", &rest)))
+        {
+            strncpy(rooms[count],token,BUF_SIZE);
+            printf("%d. %s\n", count++ + 1,token);
+
+        }
+
+        rq = requests[NUM_JOIN_ROOM];
+        sendRequest(&rq,&send_msg,&recv_msg,sockfd);
+        status = recv_msg.status;
+        if(status == SUCCESS)
+        {
+            printf("---JOINING ROOM---\n");
+
+        }
 
     }
+    else
+    {
+        fprintf(stderr,"ERORR: %s",recv_msg.data);
+    }
+
 
     return status;   
 }
@@ -137,8 +162,7 @@ int sign_request(int choice,int sockfd)
 
     };
 
-    char username[BUF_SIZE];
-    char password[BUF_SIZE];
+
     switch (choice)
     {
     case LOGIN_SCREEN:
@@ -313,13 +337,10 @@ int login_user          (char * output, char * username , char * password)
 /**
  * @brief rooms title
  */
-int getRooms_user(char *output, char * rooms, void * arg2)
+int getRooms_user(void)
 {
 
- 
-
     printf("\n---ROOMS---\n");
-    printf("Select a room you would like to join. (select a number)\n");
 
     return SUCCESS;
 
@@ -341,12 +362,11 @@ int joinRoom_user       (char * room_name)
 /**
  * @brief get messege to sent from input
  */
-int send_user           (char * msg,void * arg1, void* arg2)
+int send_user           (char * output)
 {
-
-    fgets(msg,MAXDATASIZE,stdin);
-    msg[strcspn(msg, "\n")] = 0;
-    if(strncmp(msg, " ",MAXDATASIZE) == 0)
+    fgets(output,MAXDATASIZE,stdin);
+    output[strcspn(output, "\n")] = 0;
+    if(strncmp(output, "",MAXDATASIZE) == 0)
     {
         return FAILURE;
 
@@ -358,5 +378,31 @@ int send_user           (char * msg,void * arg1, void* arg2)
 int exit_user           (void)
 {
     printf("im out\n");
+    return SUCCESS;
+
+}
+/**
+ * @brief thread for reading incoming messeges
+ */
+void recive_update(int *sockfd)
+{
+    message recv_msg;
+    
+    while(is_chat_open == 1)
+    {
+        if(receive_message(*sockfd,&recv_msg) < 0)
+		{
+			break;
+		}
+        if(recv_msg.opcode == REPLY_UPDATE)
+        {
+            printf("%s\n",recv_msg.data);
+        }
+        else if(recv_msg.opcode == REPLY_EXIT)
+        {
+            is_chat_open = 0;
+			printf("[Exiting room...]");
+        }
+    }
 
 }

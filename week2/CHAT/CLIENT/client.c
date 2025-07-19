@@ -1,56 +1,61 @@
 #define _XOPEN_SOURCE 600
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <pthread.h>
 #include "client.h"
 #define PORT "3490" 
 #define MAX_CONNECTIONS 50
-
+#define DEBUG 0
 
 
 
 int main(int argc, char *argv[])
 {
-	/*write "localhost" if you host sever localy*/
-	clientSide(argc,argv); 
 
 	
+	/*write "localhost" if you host sever localy*/
+
+	clientSide(argc,argv); 
+
+	return SUCCESS;
 }
 /**
- * @brief start program
+ * @brief tries to establish connection with the server
  */
-void clientSide(int argc, char *argv[])
+int clientSide(int argc, char *argv[])
 {
+	int retval = SUCCESS;
 	int sockfd = -1;
 	if(argc != 2)
 	{
-		fprintf(stderr,"usage: client hostname\n");
-	    exit(1);
+		printf("Server address is not specified!\n");
+		fprintf(stderr,"client hostname\n");
+	    retval = FAILURE;
 	}
 
-	if((sockfd = establish_connection(argv[1]))== FAILURE)
+	if(establish_connection(argv[1],&sockfd)== FAILURE)
 	{
-		printf("Could not establish connection\n");
-		exit(1);
-	}
-	pthread_t input_thread;
-	pthread_create(&input_thread,NULL,(void*)userInterface,&sockfd);
-	pthread_join(input_thread,NULL);
+		fprintf(stderr,"Could not establish connection\n");
+		retval = FAILURE;
 
+	}
+	else
+	{
+		pthread_t input_thread;
+		printf("%d\n",sockfd);
+		pthread_create(&input_thread,NULL,(void*)userInterface,&sockfd);
+		pthread_join(input_thread,NULL);
+
+	}
+
+
+	return retval;
+	
 }
 /**
  * @brief send message to socket
  */
 int send_message(int sockfd, const message *msg, size_t data_size) 
 {
+	int retval = SUCCESS;
 	char buf[sizeof(message)];
 	int offset = 0;
 	memcpy(buf+offset,&msg->opcode,sizeof(msg->opcode));
@@ -65,44 +70,54 @@ int send_message(int sockfd, const message *msg, size_t data_size)
     /* Send opcode */
     if (send(sockfd, buf, sizeof(message), 0) == -1) {
         perror("send opcode");
-        return FAILURE;
+        retval = FAILURE;
     }
-	printf("SEND MSG : %d %d %s\n",msg->opcode,msg->status,msg->data);
-	return SUCCESS;
+	#if DEBUG
+		printf("SEND MSG : %d %d %s\n",msg->opcode,msg->status,msg->data);
+	#endif
+
+	return retval;
 }
 
 /**
  * @brief receive messege from sockets
  */
-int receive_message(int sockfd, message *msg, size_t data_size) 
+int receive_message(int sockfd, message *msg) 
 {
+	int status = SUCCESS;
 	char buf[sizeof(message)];
-	memset(buf,0,sizeof(message));
 	int num_bytes = 0;
 	int offset = 0;
+
 	memset(buf,0,sizeof(message));
 
 	if((num_bytes = recv(sockfd,buf,sizeof(message),0)) == -1)
 	{
 		perror("recv");
-		return FAILURE;
+		status = FAILURE;
 	}
-	if(num_bytes == 0)
+	else if(num_bytes == 0)
 	{
 		printf("disconnected!\n");
-		return -2;
+		status = DISCONNECT;
+	}
+
+	if(status == SUCCESS)
+	{
+		memcpy(&msg->opcode,buf+offset,sizeof(msg->opcode));
+		offset+=sizeof(msg->opcode);
+		memcpy(&msg->status,buf+offset,sizeof(msg->status));
+		offset+=sizeof(msg->status);
+		memcpy(msg->data,buf+offset,num_bytes-offset);
+
+	#if DEBUG
+		printf("RECV MSG : %d %d %s\n",msg->opcode,msg->status,msg->data);
+	#endif
+
 	}
 
 
-	memcpy(&msg->opcode,buf+offset,sizeof(msg->opcode));
-	offset+=sizeof(msg->opcode);
-	memcpy(&msg->status,buf+offset,sizeof(msg->status));
-	offset+=sizeof(msg->status);
-	memcpy(msg->data,buf+offset,num_bytes-offset);
-
-	printf("RECV MSG : %d %d %s\n",msg->opcode,msg->status,msg->data);
-
-	return SUCCESS;
+	return status;
 }
 
 /**
@@ -111,63 +126,69 @@ int receive_message(int sockfd, message *msg, size_t data_size)
 int sendRequest(request * rq, message * send_msg,message * recv_msg,int sockfd)
 {
 	int data_size = 0;
-	int status = 0;
+	int status;
+	int i;
 	char args[2][BUF_SIZE] = {0};
 	char output[MAXDATASIZE];
 	recv_msg->status = SUCCESS; /*defult status*/
-	for (size_t i = 0; i < rq->argc; i++)
+	for (i = 0; i < rq->argc; i++)
 	{
 		
 		data_size+= rq->args_size[i];
 	}
-	/* do something */
+	/* do the local logical operation that corresponds to the obtained request*/
 	status =rq->operation(output,args[0],args[1]);
-	send_msg->opcode = rq->request_code;
-	send_msg->status = status;
-	memcpy(send_msg->data,output,data_size);
-
-
-	if(send_message(sockfd,send_msg,data_size)==FAILURE)
+	if(rq->request_code == REQUEST_SEND && strncmp(output,EXIT_COMMAND,MAXDATASIZE) == 0)
 	{
-		printf("couldnt send the messege\n");
-		return FAILURE;
+		send_msg->opcode = REQUEST_EXIT;
+		
+	}
+	else
+	{
+		send_msg->opcode = rq->request_code;
+
 	}
 
 
-	if(send_msg->opcode != REQUEST_SEND && receive_message(sockfd,recv_msg,MAXDATASIZE)==FAILURE)
+	send_msg->status = status;
+
+	memcpy(send_msg->data,output,data_size);
+	
+	status = FAILURE;
+	/* send request */
+	if(send_message(sockfd,send_msg,data_size)==FAILURE)
 	{
-		printf("couldnt recive the messege\n");
-		return FAILURE;
-	} 
-	//printf("OPCODE: %d MSG: %s\n",recv_msg->opcode , recv_msg->data);
-	return recv_msg->status;
+		fprintf(stderr,"couldnt send the messege\n");
+	}
+	/*recive replay */
+	if(send_msg->opcode != REQUEST_SEND && send_msg->opcode != REQUEST_EXIT)
+	{
+		status = receive_message(sockfd,recv_msg);
+		if(status==FAILURE)
+		{	
+			fprintf(stderr,"couldnt recive the messege\n");
+		
+		}
+	}
+	else
+	{
+		
+
+		if(recv_msg->opcode == REPLY_UPDATE)
+		{
+			printf("%s\n",recv_msg->data);
+		}
+		#if DEBUG
+			printf("RECV MSG %d %d %s\n",recv_msg->opcode , recv_msg->status , recv_msg->data);
+		#endif
+		status = SUCCESS;
+	
+		
+	}
+	
+	return status;
 
 	
-
-}
-/**
- * @brief thread for reading incoming messeges
- */
-void recive_update(int *sockfd)
-{
-    message recv_msg;
-    
-    while(1)
-    {
-        if(receive_message(*sockfd,&recv_msg,MAXDATASIZE) < 0)
-		{
-			break;
-		}
-        if(recv_msg.opcode == REPLY_UPDATE)
-        {
-            printf("%s\n",recv_msg.data);
-        }
-        else if(recv_msg.opcode == REPLY_EXIT)
-        {
-			printf("[Exiting room...]");
-            break;
-        }
-    }
 
 }
 
@@ -187,17 +208,16 @@ void *get_in_addr(struct sockaddr *sa)
 /**
  * @brief connect to server
  */
-int establish_connection(char * address)
+int establish_connection(char * address,int *sockfd)
 {
-	int sockfd, numbytes;  
 	char buf[MAXDATASIZE];
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
-	char s[INET6_ADDRSTRLEN];
+	char s[INET6_ADDRSTRLEN]; /* size of IPV6 adress*/
 
 
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof (hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
@@ -208,15 +228,15 @@ int establish_connection(char * address)
 
 	// loop through all the results and connect to the first we can
 	for(p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype,
+		if ((*sockfd = socket(p->ai_family, p->ai_socktype,
 				p->ai_protocol)) == -1) {
 			perror("client: socket");
 			continue;
 		}
 
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+		if (connect(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
 			perror("client: connect");
-			close(sockfd);
+			close(*sockfd);
 			continue;
 		}
 
@@ -227,11 +247,17 @@ int establish_connection(char * address)
 		fprintf(stderr, "client: failed to connect\n");
 		return FAILURE;
 	}
+	/*recive welcome messeg */
+
+
 
 	inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
 			s, sizeof s);
 	printf("client: connecting to %s\n", s);
 
 	freeaddrinfo(servinfo); // all done with this structure
-	return sockfd;
+	recv(*sockfd,buf,MAXDATASIZE,0);
+	printf("%s\n",buf);
+
+	return SUCCESS;
 }
