@@ -21,14 +21,20 @@ void add_client(client_list_t head, client_ptr_t new_client)
     client_list_t cur = head;
     while (cur->next)
     {
-        if (cur->next->client == new_client) return;
+        if (cur->next->client == new_client)
+            return;
         cur = cur->next;
     }
     client_list_t node = malloc(sizeof(clients_node_t));
-    if (!node) { perror("malloc"); return; }
+    if (!node)
+    {
+        perror("malloc");
+        return;
+    }
     node->client = new_client;
     node->next   = NULL;
     cur->next    = node;
+    printf("added client\n");
 }
 
 int rem_client(client_list_t head, client_ptr_t rem)
@@ -47,13 +53,27 @@ int rem_client(client_list_t head, client_ptr_t rem)
     return 0;
 }
 
+void room_add_client(room_s *room, client_ptr_t client)
+{
+    pthread_mutex_lock(& room->mutex);
+    add_client(room->clients, client);
+    pthread_mutex_unlock(& room->mutex);
+}
+
+void room_rem_client(room_s *room, client_ptr_t client)
+{
+    pthread_mutex_lock(& room->mutex);
+    rem_client(room->clients, client);
+    pthread_mutex_unlock(& room->mutex);
+}
+
 void broadcast(room_s *room, client_ptr_t ignore, message_s * message)
 {
     pthread_mutex_lock(& room->mutex);
 
-    for (client_list_t cur = room->clients->next; cur; cur = cur->next)
+    for (client_list_t cur = room->clients; cur; cur = cur->next)
     {
-        if (cur->client != ignore)
+        if (cur->client && cur->client != ignore)
         {
             send_message(cur->client->sockfd, message);
         }

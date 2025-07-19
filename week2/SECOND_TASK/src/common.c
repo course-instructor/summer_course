@@ -50,8 +50,11 @@ int get_message(client_ptr_t client)
         printf("%d\n",number);
         buf_ptr++;
         message_s * response = handle_message(number, buf_ptr, client);
+        printf("slmost sending\n");
+
         if (response)
         {
+            printf("sending\n");
             send_message(sockfd, response);
             free(response);
         }

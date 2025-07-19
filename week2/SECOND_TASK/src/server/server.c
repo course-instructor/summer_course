@@ -22,13 +22,10 @@ void *handle_client(void *arg)
     pthread_mutex_lock(&clients_mutex);
     g_current_clients--;
 
-    pthread_mutex_lock(& (g_rooms[(client->room_index)]).mutex);
 
-    room_s room = g_rooms[(client->room_index)];
 
-    rem_client(room.clients,client);
+    room_rem_client(& g_rooms[client->room_index],client);
 
-    pthread_mutex_unlock(& room.mutex);
 
     pthread_mutex_unlock(&clients_mutex);
     free(client);

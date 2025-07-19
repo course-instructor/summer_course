@@ -116,12 +116,15 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 
 
 
+
         if(success)
         {
             message_s * broadcast_message = create_message("has entered room",name);
             broadcast(& g_rooms[client->room_index], client, broadcast_message);
             free(broadcast_message);
             message->params = SUCCESS;
+            printf("success\n");
+
         }
 
         else
@@ -161,6 +164,7 @@ message_s * handle_exit_room(const char * buf,client_s * client)
 
 message_s * handle_send_to_room(const char *buf, client_s * client)
 {
+    printf("in %s\n", __FUNCTION__);
     message_s * message = malloc(sizeof(message_s));
     message->request_num = MESSAGE_FROM_CLIENT;
     message->param_count = 2;
@@ -200,6 +204,7 @@ message_s * handle_message(int num, const char * buf, void * ptr)
             break;
         case ENTER_ROOM:
             response_message = handle_enter_room(buf, client);
+            printf("%p\n", response_message);
             break;
         case MESSAGE_ROOM:
             // response_message = handle_send_
@@ -272,11 +277,9 @@ int process_login(const char *name, const char *password)
             *(strchr(line, '\n')) = '\0';
             if (strcmp(line, name) == 0) //found client
             {
-                printf("found name\n");
                 fgets(line, sizeof line, f);
                 *(strchr(line, '\n')) = '\0';
                 login_error = strcmp(line, password);//login unsuccessfull when passwords dont match...
-                printf("%d\n", login_error);
                 break; //name is unique for each user...
             }
             if (!fgets(line, sizeof line, f)) //skip password if name wasnt found (and exit loop if its the last)
@@ -311,23 +314,20 @@ message_s * handle_room_lst_message(client_s * client)
 
 int process_enter_room(client_ptr_t client,int room_num)
 {
-
+    printf("in enter room %d\n", room_num);
     int enter_room_error = 0;
     if((client -> status) == CONNECTED && room_num < ROOM_COUNT)
     {
         client->room_index = room_num;
         client -> status = IN_ROOM;
-
-        pthread_mutex_lock(& g_rooms[client->room_index].mutex);
-        room_s room = g_rooms[client->room_index];
-        add_client(room.clients, client);
-        pthread_mutex_unlock(& room.mutex);
+        room_add_client(& g_rooms[room_num], client);
     }
     return !enter_room_error;
 }
 
 int proccess_exit_room(client_s * client)
 {
+    printf("in exit room \n");
     int enter_room_error = 0;
     if((client -> status) == IN_ROOM)
     {
@@ -335,10 +335,7 @@ int proccess_exit_room(client_s * client)
 
         client -> status = CONNECTED;
 
-        pthread_mutex_lock(& g_rooms[client->room_index].mutex);
-        room_s room = g_rooms[client->room_index];
-        rem_client(room.clients, client);
-        pthread_mutex_unlock(& room.mutex);
+        room_rem_client(& g_rooms[client->room_index], client);
 
         client->room_index = -1;
     }

@@ -29,7 +29,9 @@ extern room_s g_rooms[ROOM_COUNT];
 extern pthread_mutex_t clients_mutex;
 
 client_list_t innit_clients(void);
-void add_client(client_list_t head, client_ptr_t new_client);
-int rem_client(client_list_t head, client_ptr_t remove_client);
+
+void room_add_client(room_s *room, client_ptr_t client);
+void room_rem_client(room_s *room, client_ptr_t client);
+
 void broadcast(room_s *room, client_ptr_t ignore, message_s * message);
 void innit_g_rooms(void);

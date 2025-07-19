@@ -53,7 +53,7 @@ message_s * handle_message(int num, const char * buf, void * )
             }
             break;
 
-        case (ENTER_ROOM_RESPONSE):
+        case ENTER_ROOM_RESPONSE:
             if(buf[i] == '0') //success
             {
                 printf("entered room sucssesfully\n");
