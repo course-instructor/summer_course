@@ -4,7 +4,7 @@
 
 extern enum connection_e g_level;
 
-message_s * handle_message(int num, const char * buf)
+message_s * handle_message(int num, const char * buf, client_ptr_t client)
 {
     int i = 0;
     switch (num)
@@ -17,22 +17,22 @@ message_s * handle_message(int num, const char * buf)
 
             else//failed (-1)
             {
-                printf("signed up un-sucssesfully\n");
+                printf("couldn't sign up\n");
             }
             break;
 
-        // case (LOG_IN_RESPONSE):
-        //     if(buf[i] == '0') //success
-        //     {
-        //         printf("loged in sucssesfully\n");
-        //         g_level = LOG_IN;
-        //     }
+        case (LOG_IN_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                printf("loged in sucssesfully\n");
+                g_level = LOG_IN;
+            }
 
-        //     else//failed (-1)
-        //     {
-        //         printf("loged in un-sucssesfully\n");
-        //     }
-        //     break;
+            else//failed (-1)
+            {
+                printf("couldn't log in\n");
+            }
+            break;
 
         // case (LIST_OF_ROOMS_RESPONSE):
         //     if(buf[i] != "-1") //success

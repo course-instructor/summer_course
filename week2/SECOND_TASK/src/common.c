@@ -20,8 +20,9 @@ int send_message(int sockfd, const message_s *message)
     return send(sockfd, payload, pos, 0);
 }
 
-int get_message(int sockfd)
+int get_message(client_ptr_t client)
 {
+    int sockfd = client->sockfd;
     printf("get message\n");
 
     int numbytes;
@@ -48,7 +49,7 @@ int get_message(int sockfd)
         }
         printf("%d\n",number);
         buf_ptr++;
-        message_s * response = handle_message(number, buf_ptr);
+        message_s * response = handle_message(number, buf_ptr, client);
         if (response)
         {
             send_message(sockfd, response);

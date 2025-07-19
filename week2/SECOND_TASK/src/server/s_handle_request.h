@@ -9,21 +9,8 @@
 
 int process_signup(const char *name, const char *password);
 
-/**
- * Handle user login request.
- * @return new connection_status
- */
+int process_login( const char *name, const char *password);
 
-int handle_login(client_s client, const char *name, const char *password);
-
-/**
- * Handle request for room list.
- * @return send_message result
- */
 int handle_room_lst_message(client_ptr_t client);
 
-/**
- * Handle user entering a room.
- * @return send_message result
- */
 int handle_enter_room(client_ptr_t client, int room_num);

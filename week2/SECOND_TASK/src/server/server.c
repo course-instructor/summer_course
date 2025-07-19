@@ -16,7 +16,7 @@ void *handle_client(void *arg)
     client_ptr_t client = (client_ptr_t)arg;
     // send(client->sockfd, "Welcome to the chat!\n", 22, 0);
 
-    while (get_message(client->sockfd));
+    while (get_message(client));
 
     printf("client out\n");
     close(client->sockfd);
@@ -84,7 +84,7 @@ int main(void)
 
         client_ptr_t client = malloc(sizeof(*client));
         client->sockfd = new_fd;
-        client->addr   = their_addr;
+        client->addr = their_addr;
 
         pthread_t tid;
         if (pthread_create(&tid, NULL, handle_client, client) == 0)

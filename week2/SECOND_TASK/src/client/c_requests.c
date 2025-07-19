@@ -16,7 +16,18 @@ int send_signup_message(int sockfd, const char *name, const char *password)
     return send_message( sockfd, &message);
 }
 
-// int send_login_message(int sockfd, const char *name, const char *password)
+int send_login_message(int sockfd, const char *name, const char *password)
+{
+    message_s message;
+    message.param_count = 2;
+    message.request_num = LOG_IN;
+
+    const char * temp [2] = {name, password};
+
+    message.params = temp;
+
+    return send_message( sockfd, &message);
+}
 // {
 //     int message_length = sizeof(struct message_s) + strlen(name) + 1 + strlen(password) + 1;
 //     struct message_s *message = (struct message_s *)malloc(message_length);

@@ -6,8 +6,6 @@
 #include "common.h"
 #include "s_rooms.h"  // for client_ptr_t and room APIs
 
-static const char* SUCCESS[] = {"0"}; //success status: success action
-static const char* FAIL[] = {"-1"}; //success status: failed action
 
 extern room_s g_rooms [ROOM_COUNT];
 
@@ -42,21 +40,58 @@ message_s * handle_signup(const char * buf)
     return response_message;
 }
 
-message_s * handle_message(int num, const char * buf)
+message_s * handle_login(const char * buf, client_ptr_t client)
+{
+    printf("recived login\n");
+    int reading_index = 0;
+
+    char name [MESSAGE_LENGTH];
+    get_param(buf,name, &reading_index);
+    printf("name: %s\n", name);
+    char pass [MESSAGE_LENGTH];
+    get_param(buf,pass, &reading_index);
+    printf("pass: %s\n", pass);
+
+    int success = process_login(name,pass);
+
+    message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
+    response_message->param_count = 1;
+    response_message->request_num = SIGN_UP_RESPONSE;
+
+    if(success)
+    {
+        printf("logged in successfully\n");
+        response_message->params = SUCCESS;
+        client ->status = CONNECTED;
+        strcpy(client->name,name);
+    }
+    else
+    {
+        printf("could not log in\n");
+        response_message->params = FAIL;
+    }
+    return response_message;
+}
+
+
+
+message_s * handle_message(int num, const char * buf, client_ptr_t client)
 {
     message_s * response_message = NULL;
 
     switch (num)
     {
-    case SIGN_UP:
-        response_message = handle_signup(buf);
-        break;
-
-    case LIST_OF_ROOMS: // on cient
-        break;
-    default:
-        printf("unknown message %d\n", num);
-        break;
+        case SIGN_UP:
+            response_message = handle_signup(buf);
+            break;
+        case LOG_IN:
+            response_message = handle_login(buf, client);
+            break;
+        case LIST_OF_ROOMS: // on cient
+            break;
+        default:
+            printf("unknown message %d\n", num);
+            break;
     }
     return response_message;
 }
@@ -105,29 +140,32 @@ int process_signup(const char *name, const char *password)
     return !signup_error;
 }
 
-int handle_login(client_s c,const char *name, const char *password)
+int process_login(const char *name, const char *password)
 {
+    int login_error = 1;
     FILE * f = fopen("users.txt", "r");
+    if(f)
 
-    char * str;
-
-    while(( fgets(str,MESSAGE_LENGTH,f)) && (c . status == NOT_CONNECTED))
     {
-        *strchr(str, '\n') = '\0';
-        if (strcmp(str,name) == 0)
+        char line[MESSAGE_LENGTH];
+
+        while (fgets(line, sizeof line, f))
         {
-
-            str = fgets(str,MESSAGE_LENGTH, f );
-            *strchr(str, '\n') = '\0';
-
-            if( strcmp(str,password) == 0)
+            *(strchr(line, '\n')) = '\0';
+            if (strcmp(line, name) == 0) //found client
             {
-                c . name = name;
-                c . status = CONNECTED;
+                *(strchr(line, '\n')) = '\0';
+                login_error = strcmp(line, password) == 0;//login unsuccessfull when passwords dont match...
+                break; //name is unique for each user...
+            }
+            if (!fgets(line, sizeof line, f)) //skip password if name wasnt found (and exit loop if its the last)
+            {
+                break;
             }
         }
+        fclose(f);
     }
-    return(c . status );
+    return(! login_error );
 }
 
 

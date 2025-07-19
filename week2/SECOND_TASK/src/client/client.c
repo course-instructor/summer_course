@@ -116,15 +116,16 @@ void * get_input(void * arg)
                 send_signup_message(sockfd,name,password);
                 break;
 
-            // case LOG_IN:
-            //     char name [MESSAGE_LENGTH] ;
-            //     char password [MESSAGE_LENGTH] ;
+            case LOG_IN:
+                char name [MESSAGE_LENGTH] ;
+                char password [MESSAGE_LENGTH] ;
 
-            //     name[0] = '\0';
-            //     password[0] = '\0';
+                name[0] = '\0';
+                password[0] = '\0';
 
-            //     get_name_and_pass(name,password);
-            //     send_signup_message
+                get_name_and_pass(name,password);
+                send_signup_message(sockfd,name,password);
+                break;
 
             default:
                 break;
@@ -141,7 +142,10 @@ void * get_input(void * arg)
 void * handle_connection (void* arg)
 {
     int sockfd = *((int *) arg);
-    while(get_message(sockfd));
+    client_ptr_t server;
+    server->sockfd = sockfd;
+
+    while(get_message(server));
     close(sockfd);
     printf("server disconected!\n");
     return NULL;

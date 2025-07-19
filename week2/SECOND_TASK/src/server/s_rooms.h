@@ -10,12 +10,7 @@
 
 
 
-typedef struct client_s {
-    int sockfd;
-    const char * name;
-    enum connection_e status;
-    struct sockaddr_storage addr;
-} client_s, *client_ptr_t;
+
 
 typedef struct clients_node {
     client_ptr_t          client;

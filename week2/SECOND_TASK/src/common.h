@@ -38,7 +38,18 @@ typedef struct message_s
     const char **params;
 } message_s;
 
-message_s * handle_message(int number, const char * buf);
+typedef struct client_s {
+    int sockfd;
+    char * name;
+    enum connection_e status;
+    struct sockaddr_storage addr;
+} client_s, *client_ptr_t;
+
+static const char* SUCCESS[] = {"0"}; //success status: success action
+static const char* FAIL[] = {"-1"}; //success status: failed action
+
+
+message_s * handle_message(int number, const char * buf, client_ptr_t client);
 
 #define SEPERATING_CHAR  '\r'
 #define END_CHAR '\n'
@@ -46,7 +57,7 @@ message_s * handle_message(int number, const char * buf);
 
 int send_signup_message(int sockfd, const char *name, const char *password);
 int send_message(int sockfd, const message_s *message);
-int get_message(int sockfd);
+int get_message(client_ptr_t client);
 
 void *get_in_addr(const struct sockaddr *sa);
 int get_param(const char * buf, char * ret, int * index_ptr);
