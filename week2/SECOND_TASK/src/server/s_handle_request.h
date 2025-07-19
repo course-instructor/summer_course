@@ -11,6 +11,8 @@ int process_signup(const char *name, const char *password);
 
 int process_login( const char *name, const char *password);
 
-int handle_room_lst_message(client_ptr_t client);
+message_s * handle_room_lst_message(client_ptr_t client);
 
-int handle_enter_room(client_ptr_t client, int room_num);
+message_s * handle_enter_room(const char * buf, client_s * c);
+
+int process_enter_room(client_ptr_t c,int room_num);

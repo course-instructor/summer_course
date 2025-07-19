@@ -25,7 +25,7 @@ message_s * handle_message(int num, const char * buf, client_ptr_t client)
             if(buf[i] == '0') //success
             {
                 printf("loged in sucssesfully\n");
-                g_level = LOG_IN;
+                g_level = CONNECTED;
             }
 
             else//failed (-1)
@@ -34,44 +34,37 @@ message_s * handle_message(int num, const char * buf, client_ptr_t client)
             }
             break;
 
-        // case (LIST_OF_ROOMS_RESPONSE):
-        //     if(buf[i] != "-1") //success
-        //     {
-        //         printf("availble rooms: \n");
-        //         int len;
-        //         while (1)
-        //         {
-        //             printf("room: %s\n", buf);
-        //             len = strlen(buf);
+        case (LIST_OF_ROOMS_RESPONSE):
+            if(buf[i] != '-' && buf[i+1] != '1') //success
+            {
+                printf("availble rooms: \n");
+                char temp [MESSAGE_LENGTH];
+                while (!get_param(buf,temp,&i))
+                {
 
-        //             if(buf[len - 1] == '\n') //if last char in the param is \n then its the end...
-        //             {
-        //                 break;
-        //             }
+                    printf("room: %s\n", temp);
 
-        //             buf += len; //next param
+                }
+                printf("room: %s\n\n", temp);
+            }
+            else // failed
+            {
+                printf("get rooms failed\n");
+            }
+            break;
 
-        //         }
-        //         printf("\n\n");
-        //     }
-        //     else // failed
-        //     {
-        //         printf("get rooms unsuccessfull: %s", buf[i]);
-        //     }
-        //     break;
+        case (ENTER_ROOM_RESPONSE):
+            if(buf[i] == '0') //success
+            {
+                printf("entered room sucssesfully\n");
+                g_level = IN_ROOM;
+            }
 
-        // case (ENTER_ROOM_RESPONSE):
-        //     if(buf[i] == '0') //success
-        //     {
-        //         printf("entered room sucssesfully\n");
-        //         g_level = IN_ROOM;
-        //     }
-
-        //     else//failed (-1)
-        //     {
-        //         printf("entered room un-sucssesfully\n");
-        //     }
-        //     break;
+            else//failed (-1)
+            {
+                printf("couldnt enter room\n");
+            }
+            break;
 
         // case (MESSAGE_FROM_CLIENT):
         //     char * name;

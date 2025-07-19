@@ -17,7 +17,8 @@
 #define MAX_CLIENTS 50
 #define PORT "3490"
 
-extern room_s *room1;
+extern room_s  g_rooms[ROOM_COUNT];
 extern int    g_current_clients;
 
 void *handle_client(void *arg);
+

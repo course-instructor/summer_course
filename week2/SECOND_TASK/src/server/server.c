@@ -7,8 +7,7 @@
 #include "s_handle_request.h"
 #include "common.h"
 
-room_s *room1;
-int     g_current_clients = 0;
+int g_current_clients = 0;
 
 void *handle_client(void *arg)
 {
@@ -22,7 +21,15 @@ void *handle_client(void *arg)
     close(client->sockfd);
     pthread_mutex_lock(&clients_mutex);
     g_current_clients--;
-    rem_client(room1->clients, client);
+
+    pthread_mutex_lock(& (g_rooms[(client->room_index)]).mutex);
+
+    room_s room = g_rooms[(client->room_index)];
+
+    rem_client(room.clients,client);
+
+    pthread_mutex_unlock(& room.mutex);
+
     pthread_mutex_unlock(&clients_mutex);
     free(client);
     return NULL;
@@ -57,11 +64,16 @@ int main(void)
         break;
     }
     freeaddrinfo(servinfo);
-    if (!p) exit(1);
+    if (!p)
+    {
+        exit(1);
+    }
+
+    innit_g_rooms();
+
     listen(sockfd, BACKLOG);
 
-    g_rooms[0].clients = innit_clients();
-    room1 = &g_rooms[0];
+
     printf("wiating for connections\n");
     while (1)
     {

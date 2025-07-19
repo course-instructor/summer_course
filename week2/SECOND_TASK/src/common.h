@@ -38,12 +38,15 @@ typedef struct message_s
     const char **params;
 } message_s;
 
-typedef struct client_s {
+typedef struct client_s
+{
     int sockfd;
-    char * name;
     enum connection_e status;
     struct sockaddr_storage addr;
+    int room_index;
 } client_s, *client_ptr_t;
+
+
 
 static const char* SUCCESS[] = {"0"}; //success status: success action
 static const char* FAIL[] = {"-1"}; //success status: failed action

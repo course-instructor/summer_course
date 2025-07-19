@@ -56,14 +56,13 @@ message_s * handle_login(const char * buf, client_ptr_t client)
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
     response_message->param_count = 1;
-    response_message->request_num = SIGN_UP_RESPONSE;
+    response_message->request_num = LOG_IN_RESPONSE;
 
     if(success)
     {
         printf("logged in successfully\n");
         response_message->params = SUCCESS;
-        client ->status = CONNECTED;
-        strcpy(client->name,name);
+        client->status = CONNECTED;
     }
     else
     {
@@ -73,7 +72,49 @@ message_s * handle_login(const char * buf, client_ptr_t client)
     return response_message;
 }
 
+message_s * handle_enter_room(const char * buf, client_s * c)
+{
+    message_s * message = malloc(sizeof(message_s));
+    message->request_num = ENTER_ROOM_RESPONSE;
+    message->param_count = 1;
 
+    int reading_index = 0;
+
+    char name[MESSAGE_LENGTH];
+    get_param(buf,name, &reading_index);
+
+
+
+    if((c -> status) == CONNECTED)
+    {
+        int reading_index = 0;
+
+        char name[MESSAGE_LENGTH];
+        get_param(buf,name, &reading_index);
+
+        int room_num;
+        char room_str[MESSAGE_LENGTH];
+
+        get_param(buf, room_str, &reading_index);
+
+        sscanf(room_str, "%d", &room_num);
+
+        int success = process_enter_room(c, room_num);
+
+        if(success)
+        {
+            //send message to all clients: 'client {name} has entered the room'
+
+            message->params = SUCCESS;
+        }
+
+        else
+        {
+            message->params = FAIL;
+        }
+    }
+    return message;
+}
 
 message_s * handle_message(int num, const char * buf, client_ptr_t client)
 {
@@ -87,7 +128,11 @@ message_s * handle_message(int num, const char * buf, client_ptr_t client)
         case LOG_IN:
             response_message = handle_login(buf, client);
             break;
-        case LIST_OF_ROOMS: // on cient
+        case LIST_OF_ROOMS:
+            response_message = handle_room_lst_message(client);
+            break;
+        case ENTER_ROOM:
+            response_message = handle_enter_room(buf, client);
             break;
         default:
             printf("unknown message %d\n", num);
@@ -154,6 +199,7 @@ int process_login(const char *name, const char *password)
             *(strchr(line, '\n')) = '\0';
             if (strcmp(line, name) == 0) //found client
             {
+                fgets(line, sizeof line, f);
                 *(strchr(line, '\n')) = '\0';
                 login_error = strcmp(line, password) == 0;//login unsuccessfull when passwords dont match...
                 break; //name is unique for each user...
@@ -169,44 +215,37 @@ int process_login(const char *name, const char *password)
 }
 
 
-// int handle_room_lst_message(client_s * c)
-// {
-//     char * msg;
-//     if((c -> status) != NOT_CONNECTED)
-//     {
-//         for(int i = 0; i < ROOM_COUNT; i++)
-//         {
-//             strcat(msg,i);
-//             strcat(msg, '\0');
-//         }
-//         int message_length = sizeof(struct message_s);
-//         struct message_s *message = (struct message_s *)malloc(message_length);
-//         message->length = message_length;
-//         message->request_num = LIST_OF_ROOMS;
-//         return send_message( sockfd, message);
-//     }
-// }
+message_s * handle_room_lst_message(client_s * c)
+{
+    message_s * message = NULL;
+    if((c -> status) == CONNECTED)
+    {
+        message = malloc(sizeof(message_s));
+        message->request_num = LIST_OF_ROOMS_RESPONSE;
+        message ->param_count = ROOM_COUNT;
+        message->params = malloc(ROOM_COUNT * 20);
+        for(int i = 0; i < ROOM_COUNT; i++)
+        {
+            message->params[i] = g_rooms[i].name;
+        }
+
+    }
+    return message;
+}
 
 
-// int handle_enter_room(client_s c, int room_num)
-// {
-//     if((c -> status) != NOT_CONNECTED)
-//     {
-//         if(room_num <  ROOM_COUNT && room_num > 0)
-//         {
-//             c -> room = g_rooms[i];
-//             c -> status =   IN_ROOM;
+int process_enter_room(client_ptr_t c,int room_num)
+{
+    int enter_room_error = 0;
+    if((c -> status) == CONNECTED && room_num < ROOM_COUNT)
+    {
+        c->room_index = room_num;
+        c -> status = IN_ROOM;
 
-//             client_s top = g_rooms[i] -> clients;
-//             mutex_lock (g_rooms[i]);
-//             while
-//         }
-
-//         int message_length = sizeof(struct message_s);
-//         struct message_s *message = (struct message_s *)malloc(message_length);
-//         message->param_count = 2;
-//         message->params = g_rooms;
-//         message->request_num = LIST_OF_ROOMS;
-//         return send_message( sockfd, message);
-//     }
-// }
+        pthread_mutex_lock(& g_rooms[c->room_index].mutex);
+        room_s room = g_rooms[c->room_index];
+        add_client(room.clients, c);
+        pthread_mutex_unlock(& room.mutex);
+    }
+    return !enter_room_error;
+}

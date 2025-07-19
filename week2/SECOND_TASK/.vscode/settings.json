@@ -6,6 +6,7 @@
         "c_request.h": "c",
         "netdb.h": "c",
         "s_handle_request.h": "c",
-        "server.h": "c"
+        "server.h": "c",
+        "string.h": "c"
     }
 }

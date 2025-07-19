@@ -21,7 +21,6 @@
 
 #define PORT "3490"         // Port number for connection
 
-
 const char * INP_MESSAGES [] =
 {
 "sign up (enter 100), or log in (enter 101):\t",
@@ -63,6 +62,30 @@ void get_name_and_pass(char * name, char * password)
     }
 }
 
+void get_name_and_room(char * name, int * room_ptr)
+{
+    printf("enter username: \t");
+    fflush(stdout);
+
+    fgets(name, MESSAGE_LENGTH, stdin);
+
+    char *line_end = strchr(name,'\n');
+    if (line_end)
+    {
+        *line_end = '\0';
+    }
+
+    printf("enter room index to enter: \t");
+    fflush(stdout);
+
+    char temp[MESSAGE_LENGTH];
+
+    fgets(temp,MESSAGE_LENGTH,stdin);
+
+    sscanf(temp,"%d",room_ptr);
+}
+
+
 int check_action_permission(enum request_e request)
 {
     int ret = 0;
@@ -103,30 +126,34 @@ void * get_input(void * arg)
             continue;
         }
 
+        char name [MESSAGE_LENGTH] ;
+        char password [MESSAGE_LENGTH] ;
+
+        name[0] = '\0';
+        password[0] = '\0';
+
+
         switch (number)
         {
             case SIGN_UP:
-                char name [MESSAGE_LENGTH] ;
-                char password [MESSAGE_LENGTH] ;
-
-                name[0] = '\0';
-                password[0] = '\0';
 
                 get_name_and_pass(name,password);
                 send_signup_message(sockfd,name,password);
                 break;
 
             case LOG_IN:
-                char name [MESSAGE_LENGTH] ;
-                char password [MESSAGE_LENGTH] ;
-
-                name[0] = '\0';
-                password[0] = '\0';
 
                 get_name_and_pass(name,password);
-                send_signup_message(sockfd,name,password);
+                send_login_message(sockfd,name,password);
+                break;
+            case LIST_OF_ROOMS:
+                send_room_lst_message(sockfd);
                 break;
 
+            case ENTER_ROOM:
+                int room;
+                get_name_and_room( name, &room);
+                send_enter_room_message(sockfd,name, room);
             default:
                 break;
         }
@@ -142,11 +169,12 @@ void * get_input(void * arg)
 void * handle_connection (void* arg)
 {
     int sockfd = *((int *) arg);
-    client_ptr_t server;
+    client_ptr_t server = malloc(sizeof(client_s));
     server->sockfd = sockfd;
 
     while(get_message(server));
     close(sockfd);
+    free(server);
     printf("server disconected!\n");
     return NULL;
 }
