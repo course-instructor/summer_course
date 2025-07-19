@@ -19,7 +19,7 @@ enum request_e
     LOG_IN,
     LIST_OF_ROOMS,
     ENTER_ROOM,
-    MESSEGE_ROOM,
+    MESSAGE_ROOM,
     EXIT_ROOM,
 
     SIGN_UP_RESPONSE       = 200,
@@ -48,11 +48,11 @@ typedef struct client_s
 
 
 
-static const char* SUCCESS[] = {"0"}; //success status: success action
-static const char* FAIL[] = {"-1"}; //success status: failed action
+static const char* SUCCESS[] __attribute__((unused)) = {"0"}; //success status: success action
+static const char* FAIL[] __attribute__((unused)) = {"-1"}; //success status: failed action
 
 
-message_s * handle_message(int number, const char * buf, client_ptr_t client);
+message_s * handle_message(int number, const char * buf, void * ptr);
 
 #define SEPERATING_CHAR  '\r'
 #define END_CHAR '\n'

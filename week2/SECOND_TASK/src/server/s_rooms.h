@@ -31,5 +31,5 @@ extern pthread_mutex_t clients_mutex;
 client_list_t innit_clients(void);
 void add_client(client_list_t head, client_ptr_t new_client);
 int rem_client(client_list_t head, client_ptr_t remove_client);
-void broadcast(room_s *room, client_ptr_t ignore, const char *payload);
+void broadcast(room_s *room, client_ptr_t ignore, message_s * message);
 void innit_g_rooms(void);

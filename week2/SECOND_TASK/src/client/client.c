@@ -31,7 +31,7 @@ const char * INP_MESSAGES [] =
 static const enum request_e ALLOWED_ACTIONS[][2] = {
     { SIGN_UP,       LOG_IN        },
     { LIST_OF_ROOMS, ENTER_ROOM    },
-    { MESSEGE_ROOM,  EXIT_ROOM     }
+    { MESSAGE_ROOM,  EXIT_ROOM     }
 };
 
 _Atomic enum connection_e g_level = NOT_CONNECTED;
@@ -73,6 +73,7 @@ void get_name_and_room(char * name, int * room_ptr)
     if (line_end)
     {
         *line_end = '\0';
+
     }
 
     printf("enter room index to enter: \t");
@@ -117,48 +118,80 @@ void * get_input(void * arg)
             fflush(stdout);
         }
 
-
         fgets(text,MESSAGE_LENGTH,stdin);
-        number = -1;
-        sscanf(text,"%d",&number);
-        if(!check_action_permission(number)) //inapropriate protocol
+
+        if(g_level == IN_ROOM)
         {
-            continue;
+            char name [MESSAGE_LENGTH] ;
+
+            name[0] = '\0';
+
+            printf("enter username: \t");
+            fflush(stdout);
+
+            fgets(name, MESSAGE_LENGTH, stdin);
+
+            char *line_end = strchr(name,'\n');
+            if (line_end)
+            {
+                *line_end = '\0';
+            }
+
+            if(strcmp(text,"~\n")) //disconnect
+            {
+                send_leave_room_message(sockfd,name);
+            }
+
+            else
+            {
+                // char str [MESSAGE_LENGTH];
+                // send_in_room_message(sockfd,name, str);
+            }
         }
 
-        char name [MESSAGE_LENGTH] ;
-        char password [MESSAGE_LENGTH] ;
-
-        name[0] = '\0';
-        password[0] = '\0';
-
-
-        switch (number)
+        else
         {
-            case SIGN_UP:
 
-                get_name_and_pass(name,password);
-                send_signup_message(sockfd,name,password);
-                break;
+            number = -1;
+            sscanf(text,"%d",&number);
+            if(!check_action_permission(number)) //inapropriate protocol
+            {
+                continue;
+            }
 
-            case LOG_IN:
+            char name [MESSAGE_LENGTH] ;
+            char password [MESSAGE_LENGTH] ;
 
-                get_name_and_pass(name,password);
-                send_login_message(sockfd,name,password);
-                break;
-            case LIST_OF_ROOMS:
-                send_room_lst_message(sockfd);
-                break;
+            name[0] = '\0';
+            password[0] = '\0';
 
-            case ENTER_ROOM:
-                int room;
-                get_name_and_room( name, &room);
-                send_enter_room_message(sockfd,name, room);
-            default:
-                break;
+
+            switch (number)
+            {
+                case SIGN_UP:
+
+                    get_name_and_pass(name,password);
+                    send_signup_message(sockfd,name,password);
+                    break;
+
+                case LOG_IN:
+
+                    get_name_and_pass(name,password);
+                    send_login_message(sockfd,name,password);
+                    break;
+                case LIST_OF_ROOMS:
+                    send_room_lst_message(sockfd);
+                    break;
+
+                case ENTER_ROOM:
+                    int room;
+                    get_name_and_room( name, &room);
+                    send_enter_room_message(sockfd,name, room);
+                default:
+                    break;
+            }
+
         }
-
-
 
 
     }

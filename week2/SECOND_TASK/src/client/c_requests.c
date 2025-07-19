@@ -44,7 +44,7 @@ int send_room_lst_message(int sockfd)
 }
 
 
-int send_enter_room_message(int sockfd, char* name, int room)
+int send_enter_room_message(int sockfd, const char* name, int room)
 {
     message_s message;
     message.param_count = 2;
@@ -54,6 +54,20 @@ int send_enter_room_message(int sockfd, char* name, int room)
     snprintf(room_str, sizeof room_str, "%d", room);
 
     const char * temp [2] = {name, room_str};
+    message.params = temp;
+
+    return send_message( sockfd, &message);
+}
+
+
+int send_leave_room_message(int sockfd,const char * name)
+{
+    message_s message;
+    message.param_count = 1;
+    message.request_num = EXIT_ROOM;
+
+
+    const char * temp [1] = {name};
     message.params = temp;
 
     return send_message( sockfd, &message);

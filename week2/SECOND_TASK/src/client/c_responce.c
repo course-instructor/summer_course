@@ -4,7 +4,7 @@
 
 extern enum connection_e g_level;
 
-message_s * handle_message(int num, const char * buf, client_ptr_t client)
+message_s * handle_message(int num, const char * buf, void * )
 {
     int i = 0;
     switch (num)

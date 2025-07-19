@@ -47,25 +47,18 @@ int rem_client(client_list_t head, client_ptr_t rem)
     return 0;
 }
 
-void broadcast(room_s *room, client_ptr_t ignore, const char *payload)
+void broadcast(room_s *room, client_ptr_t ignore, message_s * message)
 {
-    pthread_mutex_lock(&clients_mutex);
-    char sender[INET6_ADDRSTRLEN];
-    inet_ntop(ignore->addr.ss_family,
-              get_in_addr((struct sockaddr *)&ignore->addr),
-              sender, sizeof sender);
-
-    char out[1200];
-    int len = snprintf(out, sizeof out, "%s: %s\n", sender, payload);
+    pthread_mutex_lock(& room->mutex);
 
     for (client_list_t cur = room->clients->next; cur; cur = cur->next)
     {
         if (cur->client != ignore)
         {
-            send(cur->client->sockfd, out, len, 0);
+            send_message(cur->client->sockfd, message);
         }
     }
-    pthread_mutex_unlock(&clients_mutex);
+    pthread_mutex_unlock(& room->mutex);
 }
 
 
