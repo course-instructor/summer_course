@@ -21,6 +21,7 @@
 
 #define PORT "3490"         // Port number for connection
 
+//prompt user for stdin input for each permition level
 const char * INP_MESSAGES [] =
 {
 "sign up (enter 100), or log in (enter 101):\t",
@@ -28,13 +29,15 @@ const char * INP_MESSAGES [] =
 "send a message in the room, or exit room (enter ~):\t"
 };
 
-static const enum request_e ALLOWED_ACTIONS[][2] = {
+//allowed actions in each permision level
+static const enum request_e ALLOWED_ACTIONS[][2] = 
+{
     { SIGN_UP,       LOG_IN        },
     { LIST_OF_ROOMS, ENTER_ROOM    },
     { MESSAGE_ROOM,  EXIT_ROOM     }
 };
 
-_Atomic enum connection_e g_level = NOT_CONNECTED;
+_Atomic enum connection_e g_level = NOT_CONNECTED; //permition level of the client
 
 
 /**

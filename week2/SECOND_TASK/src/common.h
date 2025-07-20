@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define MESSAGE_LENGTH 256
+#define MESSAGE_LENGTH 256 //max length of the message
 
 /// @brief the connection access status of the client
 enum connection_e
@@ -37,19 +37,21 @@ enum request_e
     WAITING = 0
 };
 
+/// @brief message struct that will be reformated into a string before sending
 typedef struct message_s
 {
-    enum request_e request_num;
-    int param_count;
-    const char **params;
+    enum request_e request_num; //request number of the message(what tipe of message)
+    int param_count; //how many params are in the message not including request num
+    const char **params; // an array of params to be passed
 } message_s;
 
+/// @brief client struct that is used to store different info about the client 
 typedef struct client_s
 {
-    int sockfd;
-    enum connection_e status;
-    struct sockaddr_storage addr;
-    int room_index;
+    int sockfd; // the clients socket
+    enum connection_e status; // the connections status ( what the client is allowed to do)
+    struct sockaddr_storage addr; //sock address
+    int room_index; //room_index
 } client_s, *client_ptr_t;
 
 
@@ -60,8 +62,8 @@ static const char* FAIL[] __attribute__((unused)) = {"-1"}; //success status: fa
 
 message_s * handle_message(int number, const char * buf, void * ptr);
 
-#define SEPERATING_CHAR  '\r'
-#define END_CHAR '\n'
+#define SEPERATING_CHAR  '\r' //char after every message param
+#define END_CHAR '\n' //char at the end of the message
 
 
 int send_message(int sockfd, const message_s *message);

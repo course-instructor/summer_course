@@ -7,7 +7,7 @@
 #include "s_handle_request.h"
 #include "common.h"
 
-int g_current_clients = 0;
+int g_current_clients = 0; //how many clients are connected 
 
 /**
  * @brief function getting messages from a client and responding to them acordingly

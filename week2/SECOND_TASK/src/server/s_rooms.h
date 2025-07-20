@@ -6,22 +6,23 @@
 
 
 
-#define ROOM_COUNT 5
+#define ROOM_COUNT 5 //how many rooms there are in g_rooms
 
 
 
-
+/// @brief clients linked list
 typedef struct clients_node
 {
-    client_ptr_t          client;
-    struct clients_node  *next;
+    client_ptr_t client; //current client value
+    struct clients_node *next; //pointer to next node in the linked list
 } clients_node_t, *client_list_t;
 
+/// @brief room struct where a u can send a broadcast message
 typedef struct room_s
 {
-    client_list_t clients;
-    pthread_mutex_t mutex;
-    char name [20];
+    client_list_t clients; //linked list of clients in the room
+    pthread_mutex_t mutex; //room mutex to prevent race conditions when clients operate with the room
+    char name [20]; //the rooms name that will be sent on a request of the list of rooms
 } room_s;
 
 

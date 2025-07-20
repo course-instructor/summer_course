@@ -3,14 +3,14 @@
 #include <string.h>
 
 extern _Atomic enum connection_e g_level;
-_Atomic enum request_e g_server_reply;
+_Atomic enum request_e g_server_reply; //an atomic enum that is used to check if the server has responded after a request that might change the clients state
 
 /**
- * @brief 
+ * @brief changes the clients status and prints a message accordingly depending on the servers responce
  * 
- * @param num 
- * @param buf 
- * @return message_s* 
+ * @param num responce number of the message from the server
+ * @param buf the responce itself from the server
+ * @return message_s* NULL
  */
 message_s * handle_message(int num, const char * buf, void * )
 {
