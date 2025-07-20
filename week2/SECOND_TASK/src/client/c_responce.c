@@ -2,14 +2,16 @@
 #include <stdio.h>
 #include <string.h>
 
-extern enum connection_e g_level;
+extern _Atomic enum connection_e g_level;
+_Atomic enum request_e g_server_reply;
 
 message_s * handle_message(int num, const char * buf, void * )
 {
     int i = 0;
     switch (num)
     {
-        case (SIGN_UP_RESPONSE):
+        case SIGN_UP_RESPONSE:
+            g_server_reply = num;
             if(buf[0] == '0') //success
             {
                 printf("signed up sucssesfully\n");
@@ -21,7 +23,8 @@ message_s * handle_message(int num, const char * buf, void * )
             }
             break;
 
-        case (LOG_IN_RESPONSE):
+        case LOG_IN_RESPONSE:
+            g_server_reply = num;
             if(buf[i] == '0') //success
             {
                 printf("loged in sucssesfully\n");
@@ -34,7 +37,8 @@ message_s * handle_message(int num, const char * buf, void * )
             }
             break;
 
-        case (LIST_OF_ROOMS_RESPONSE):
+        case LIST_OF_ROOMS_RESPONSE:
+            g_server_reply = num;
             if(buf[i] != '-' && buf[i+1] != '1') //success
             {
                 printf("availble rooms: \n");
@@ -54,6 +58,7 @@ message_s * handle_message(int num, const char * buf, void * )
             break;
 
         case ENTER_ROOM_RESPONSE:
+            g_server_reply = num;
             if(buf[i] == '0') //success
             {
                 printf("entered room sucssesfully\n");
@@ -78,11 +83,20 @@ message_s * handle_message(int num, const char * buf, void * )
             printf("%s: %s\n", name, message);
             break;
 
-        // case MESSAGE_FROM_SERVER:
-        //     printf("server: %s\n" , buf);
-        //     break;
+        case MESSAGE_FROM_SERVER:
+        {
+            char message[MESSAGE_LENGTH];
+
+            int index = 0;
+
+            get_param(buf, message, &index);
+
+            printf("server: %s\n" , message);
+        }
+            break;
 
         case EXIT_ROOM_RESPONSE:
+            g_server_reply = num;
             if(buf[i] == '0') //success
             {
                 printf("exited room\n");

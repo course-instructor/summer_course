@@ -29,6 +29,8 @@ enum request_e
     MESSAGE_FROM_CLIENT,
     MESSAGE_FROM_SERVER,
     EXIT_ROOM_RESPONSE     = 211,
+
+    ZERO = 0
 };
 
 typedef struct message_s
@@ -58,7 +60,6 @@ message_s * handle_message(int number, const char * buf, void * ptr);
 #define END_CHAR '\n'
 
 
-int send_signup_message(int sockfd, const char *name, const char *password);
 int send_message(int sockfd, const message_s *message);
 int get_message(client_ptr_t client);
 
