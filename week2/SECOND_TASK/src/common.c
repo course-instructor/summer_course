@@ -18,10 +18,14 @@ int send_message(int sockfd, const message_s *message)
     char payload[MESSAGE_LENGTH];
     int  pos = snprintf(payload, sizeof payload, "%d%c",message->request_num,SEPERATING_CHAR);
 
-    for (int i = 0; message->params[i]; i++) //loop until NULL params terminator
+    if(message->params)
     {
-        pos += snprintf(payload + pos, sizeof payload - pos, "%s%c",  message->params[i], SEPERATING_CHAR);
+        for (int i = 0; message->params[i]; i++) //loop until NULL params terminator
+        {
+            pos += snprintf(payload + pos, sizeof payload - pos, "%s%c",  message->params[i], SEPERATING_CHAR);
+        }
     }
+
     payload[pos++] = END_CHAR;
 
     return send(sockfd, payload, pos, 0);
