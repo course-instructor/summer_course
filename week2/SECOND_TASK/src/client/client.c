@@ -137,7 +137,7 @@ void * get_input(void * arg)
                 *line_end = '\0';
             }
 
-            if(strcmp(text,"~\n")) //disconnect
+            if(strcmp(text,"~\n") == 0) //disconnect
             {
                 send_leave_room_message(sockfd,name);
             }

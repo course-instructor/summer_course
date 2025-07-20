@@ -122,7 +122,7 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 message_s * handle_exit_room(const char * buf,client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
-    message->request_num = ENTER_ROOM_RESPONSE;
+    message->request_num = EXIT_ROOM_RESPONSE;
     message->param_count = 1;
 
     int reading_index = 0;
@@ -318,7 +318,6 @@ int proccess_exit_room(client_s * client)
 
         room_rem_client(& g_rooms[client->room_index], client);
 
-        client->room_index = -1;
     }
     return !enter_room_error;
 }
