@@ -98,7 +98,7 @@ void send_leave_room_message(int sockfd,const char * name)
 void send_in_room_message(int sockfd,const char * name, const char * str)
 {
     message_s message;
-    message.param_count = 3;
+    message.param_count = 2;
     message.request_num = MESSAGE_ROOM;
 
 

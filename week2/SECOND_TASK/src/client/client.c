@@ -25,7 +25,7 @@ const char * INP_MESSAGES [] =
 {
 "sign up (enter 100), or log in (enter 101):\t",
 "get a list of the rooms (enter 102), or choose a room to enter (103):\t",
-"send a message in the room (enter 104), or exit room (enter 105):\t"
+"send a message in the room, or exit room (enter ~):\t"
 };
 
 static const enum request_e ALLOWED_ACTIONS[][2] = {
@@ -137,15 +137,21 @@ void * get_input(void * arg)
                 *line_end = '\0';
             }
 
-            if(strcmp(text,"~\n") == 0) //disconnect
+            line_end = strchr(text,'\n');
+            if (line_end)
+            {
+                *line_end = '\0';
+            }
+
+
+            if(strcmp(text,"~") == 0) //disconnect
             {
                 send_leave_room_message(sockfd,name);
             }
 
             else
             {
-                char str [MESSAGE_LENGTH];
-                send_in_room_message(sockfd,name, str);
+                send_in_room_message(sockfd,name, text);
             }
         }
 
