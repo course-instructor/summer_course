@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stddef.h> // NULL
 
 #define MESSAGE_LENGTH 256 //max length of the message
 
@@ -41,11 +42,10 @@ enum request_e
 typedef struct message_s
 {
     enum request_e request_num; //request number of the message(what tipe of message)
-    int param_count; //how many params are in the message not including request num
-    const char **params; // an array of params to be passed
+    const char **params; // a NULL terminated array of params to be passed
 } message_s;
 
-/// @brief client struct that is used to store different info about the client 
+/// @brief client struct that is used to store different info about the client
 typedef struct client_s
 {
     int sockfd; // the clients socket
@@ -56,8 +56,8 @@ typedef struct client_s
 
 
 
-static const char* SUCCESS[] __attribute__((unused)) = {"0"}; //success status: success action
-static const char* FAIL[] __attribute__((unused)) = {"-1"}; //success status: failed action
+static const char* SUCCESS[] __attribute__((unused)) = {"0", NULL}; //success status: success action
+static const char* FAIL[] __attribute__((unused)) = {"-1", NULL}; //success status: failed action
 
 
 message_s * handle_message(int number, const char * buf, void * ptr);

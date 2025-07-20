@@ -9,7 +9,7 @@ pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * @brief creates and initializes a client_list_t
- * 
+ *
  * @return client_list_t the newly created client linked list
  */
 client_list_t innit_clients(void)
@@ -23,7 +23,7 @@ client_list_t innit_clients(void)
 
 /**
  * @brief adds a client to a client linked list if it isnt already there, the first one will be added to the head->next and not to head->client so head->client will be NULL
- * 
+ *
  * @param head the start of the client linked list
  * @param new_client the client to be added to the linked list
  */
@@ -50,15 +50,15 @@ void add_client(client_list_t head, client_ptr_t new_client)
 
 /**
  * @brief removes client from linked listif exists
- * 
+ *
  * @param head start of client linked list
- * @param rem 
+ * @param rem
  * @return int was the client removed? (1,0)
  */
 int rem_client(client_list_t head, client_ptr_t rem)
 {
     client_list_t prev = head, cur = head->next;
-    while (cur) 
+    while (cur)
     {
         if (cur->client == rem)
         {
@@ -73,8 +73,8 @@ int rem_client(client_list_t head, client_ptr_t rem)
 }
 
 /**
- * @brief adds client to room and locks the room 
- * 
+ * @brief adds client to room and locks the room
+ *
  * @param room room to add client
  * @param client client to add to the room
  */
@@ -86,8 +86,8 @@ void room_add_client(room_s *room, client_ptr_t client)
 }
 
 /**
- * @brief removes client from room and locks the room 
- * 
+ * @brief removes client from room and locks the room
+ *
  * @param room room to remove client from
  * @param client client to remove from room
  */
@@ -99,8 +99,8 @@ void room_rem_client(room_s *room, client_ptr_t client)
 }
 
 /**
- * @brief send message to everyone in a room except one client 
- * 
+ * @brief send message to everyone in a room except one client
+ *
  * @param room room that the message will be sent in
  * @param ignore a client to ignore (the client that sent the message)
  * @param name the name that the client used to send the message
@@ -109,22 +109,13 @@ void room_rem_client(room_s *room, client_ptr_t client)
 void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* str)
 {
 
-    message_s * message = malloc(sizeof(message_s));
-    message->request_num = name ? MESSAGE_FROM_CLIENT : MESSAGE_FROM_SERVER;
-    message->param_count = name ? 2 : 1;
+    message_s message;
+    message.request_num = name ? MESSAGE_FROM_CLIENT : MESSAGE_FROM_SERVER;
 
-    const char * temp [2];
-    if (name)
-    {
-        temp[0] = name;
-        temp[1] = str;
-    }
-    else
-    {
-        temp[0] = str;
-    }
+    const char * with_name [] = { name, str, NULL};
+    const char * without_name [] = { str, NULL};
 
-    message->params = temp;
+    message.params = name ? with_name : without_name;
 
     pthread_mutex_lock(& room->mutex);
 
@@ -132,7 +123,7 @@ void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* 
     {
         if (cur->client && cur->client != ignore)
         {
-            send_message(cur->client->sockfd, message);
+            send_message(cur->client->sockfd, & message);
         }
     }
     pthread_mutex_unlock(& room->mutex);
@@ -140,7 +131,7 @@ void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* 
 
 /**
  * @brief initialize g_rooms and give them names
- * 
+ *
  */
 void innit_g_rooms(void)
 {

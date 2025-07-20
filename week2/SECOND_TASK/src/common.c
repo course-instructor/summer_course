@@ -8,7 +8,7 @@
 
 /**
  * @brief sends message to a socket: request_num param1 param2 ... after each param seperating char, at the end end_char
- * 
+ *
  * @param sockfd socket to send to
  * @param message mesage_s pointer (to write the params and request number to the socket)
  * @return int send success
@@ -18,17 +18,17 @@ int send_message(int sockfd, const message_s *message)
     char payload[MESSAGE_LENGTH];
     int  pos = snprintf(payload, sizeof payload, "%d%c",message->request_num,SEPERATING_CHAR);
 
-    for (int i = 0; i < message->param_count; i++)
+    for (int i = 0; message->params[i]; i++) //loop until NULL params terminator
     {
         pos += snprintf(payload + pos, sizeof payload - pos, "%s%c",  message->params[i], SEPERATING_CHAR);
     }
     payload[pos++] = END_CHAR;
-    
+
     return send(sockfd, payload, pos, 0);
 }
 /**
  * @brief recv a message from the socket stored in client read the request number then call the handle_message function (unique for client, server)
- * 
+ *
  * @param client sent to handle_message, is used to get the socket to listen to...
  * @return int 1 if connected else 0
  */
@@ -73,11 +73,11 @@ int get_message(client_ptr_t client)
 
 /**
  * @brief Get the in addr
- * 
+ *
  * @param sa sock adders that we read the address from
  * @return void* ipv4 or ipv6
  */
-void *get_in_addr(const struct sockaddr *sa) 
+void *get_in_addr(const struct sockaddr *sa)
 {
     if (sa->sa_family == AF_INET)
     {
@@ -91,7 +91,7 @@ void *get_in_addr(const struct sockaddr *sa)
 
 /**
  * @brief Get the next param from the buffer and increment the reading index to the current reading index
- * 
+ *
  * @param buf string that the param is read from
  * @param ret the string that the param is writen to (and null terminated)
  * @param index_ptr reading index pointer the function reads a parameter from the string at this index and increments it to the index of the start of the next param

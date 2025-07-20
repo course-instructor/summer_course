@@ -11,9 +11,9 @@ extern room_s g_rooms [ROOM_COUNT];
 
 /**
  * @brief the function reads the content of the request message and signs up client in if he is successfull
- * 
+ *
  * @param buf the message string striped of the request number that contains the name and password
- * @return message_s* a message to send to the user "-1" fail, "0" success 
+ * @return message_s* a message to send to the user "-1" fail, "0" success
  */
 message_s * handle_signup(const char * buf)
 {
@@ -29,7 +29,6 @@ message_s * handle_signup(const char * buf)
     int success = process_signup(name,pass);
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
-    response_message->param_count = 1;
     response_message->request_num = SIGN_UP_RESPONSE;
 
     if(success)
@@ -47,10 +46,10 @@ message_s * handle_signup(const char * buf)
 
 /**
  * @brief the function reads the content of the request message and logs client in if he is successfull
- * 
+ *
  * @param buf message with name and password
  * @param client client that wants to log in (his status will be changed if he loges in successfully)
- * @return message_s* the responce message "-1" fail, "0" success 
+ * @return message_s* the responce message "-1" fail, "0" success
  */
 message_s * handle_login(const char * buf, client_s * client)
 {
@@ -66,7 +65,6 @@ message_s * handle_login(const char * buf, client_s * client)
     int success = process_login(name,pass);
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
-    response_message->param_count = 1;
     response_message->request_num = LOG_IN_RESPONSE;
 
     if(success)
@@ -85,16 +83,15 @@ message_s * handle_login(const char * buf, client_s * client)
 
 /**
  * @brief the function reads the content of the request message and adds him to room in if he is successfull
- * 
+ *
  * @param buf the message with the name and room num to try and enter
- * @param client client that wants to enter room 
- * @return message_s* the responce message "-1" fail, "0" success 
+ * @param client client that wants to enter room
+ * @return message_s* the responce message "-1" fail, "0" success
  */
 message_s * handle_enter_room(const char * buf, client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
     message->request_num = ENTER_ROOM_RESPONSE;
-    message->param_count = 1;
 
     int reading_index = 0;
 
@@ -139,16 +136,15 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 
 /**
  * @brief the function reads the content of the request message and removes him from room if he is successfull
- * 
+ *
  * @param buf the message with the name
- * @param client client that wants to leave room 
- * @return message_s*  the responce message "-1" fail, "0" success 
+ * @param client client that wants to leave room
+ * @return message_s*  the responce message "-1" fail, "0" success
  */
 message_s * handle_exit_room(const char * buf,client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
     message->request_num = EXIT_ROOM_RESPONSE;
-    message->param_count = 1;
 
     int reading_index = 0;
 
@@ -172,17 +168,15 @@ message_s * handle_exit_room(const char * buf,client_s * client)
 }
 
 /**
- * @brief  the function reads the content of the request message and sends message in room under the name 
- * 
+ * @brief  the function reads the content of the request message and sends message in room under the name
+ *
  * @param buf the message with the name and message to send to room
  * @param client client that wants to seend to room a message
  * @return message_s* NULL
  */
 message_s * handle_send_to_room(const char *buf, client_s * client)
 {
-    // message_s * message = malloc(sizeof(message_s));
-    // message->request_num = MESSAGE_FROM_CLIENT;
-    // message->param_count = 2;
+
 
     int reading_index = 0;
 
@@ -192,9 +186,6 @@ message_s * handle_send_to_room(const char *buf, client_s * client)
     char str[MESSAGE_LENGTH];
     get_param(buf, str, &reading_index);
 
-    // const char * temp [2] = {name,str};
-
-    // message->params = temp;
 
     broadcast(& g_rooms[client->room_index] , client, name, str);
 
@@ -203,10 +194,10 @@ message_s * handle_send_to_room(const char *buf, client_s * client)
 
 /**
  * @brief the function calls the apropriete request handler for each request and returns the message it gets from the handler
- * 
+ *
  * @param num request number
  * @param buf the rest of the message (without request number)
- * @param ptr client pointer 
+ * @param ptr client pointer
  * @return message_s* message that it got from handler
  */
 message_s * handle_message(int num, const char * buf, void * ptr)
@@ -244,7 +235,7 @@ message_s * handle_message(int num, const char * buf, void * ptr)
 
 /**
  * @brief the function tries to signup the client (succes if the client doesnt already exist)
- * 
+ *
  * @param name the username of the client
  * @param password the password of the client
  * @return int 1 succesfull signup, 0 didnt succeed
@@ -292,7 +283,7 @@ int process_signup(const char *name, const char *password)
 }
 /**
  * @brief the function tries to find the client and checks if the password is correct
- * 
+ *
  * @param name clients name
  * @param password attempted password
  * @return int was the client found and the password mach?
@@ -328,7 +319,7 @@ int process_login(const char *name, const char *password)
 
 /**
  * @brief the function creates a message with the names of the available room
- * 
+ *
  * @param client client that wants to get the list of rooms
  * @return message_s* list of rooms or {-1} if unssuccessfull
  */
@@ -339,12 +330,13 @@ message_s * handle_room_lst_message(client_s * client)
     {
         message = malloc(sizeof(message_s));
         message->request_num = LIST_OF_ROOMS_RESPONSE;
-        message ->param_count = ROOM_COUNT;
-        message->params = malloc(ROOM_COUNT * 20);
+        message->params = malloc((ROOM_COUNT + 1) * sizeof(char *)); //room names + NULL terminator
+
         for(int i = 0; i < ROOM_COUNT; i++)
         {
             message->params[i] = g_rooms[i].name;
         }
+        message->params[ROOM_COUNT] = NULL;
 
     }
     return message;
@@ -352,7 +344,7 @@ message_s * handle_room_lst_message(client_s * client)
 
 /**
  * @brief the function tries to add client to room
- * 
+ *
  * @param client client to add to the room
  * @param room_num room that the client wants to enter
  * @return int did the client enter the room
@@ -372,7 +364,7 @@ int process_enter_room(client_ptr_t client,int room_num)
 
 /**
  * @brief the function tries to remove client from room
- * 
+ *
  * @param client client that wants to leave the room
  * @return int did the client leave the room
  */
