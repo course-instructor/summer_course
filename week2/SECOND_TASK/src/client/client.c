@@ -37,7 +37,12 @@ static const enum request_e ALLOWED_ACTIONS[][2] = {
 _Atomic enum connection_e g_level = NOT_CONNECTED;
 
 
-
+/**
+ * @brief Get the name and password from client stdin
+ * 
+ * @param name stores the name of the client
+ * @param password stores the password
+ */
 void get_name_and_pass(char * name, char * password)
 {
     printf("enter username: \t");
@@ -62,6 +67,12 @@ void get_name_and_pass(char * name, char * password)
     }
 }
 
+/**
+ * @brief Get the name and room from client stdin
+ * 
+ * @param name stores the name of the client
+ * @param room_ptr stores the room number
+ */
 void get_name_and_room(char * name, int * room_ptr)
 {
     printf("enter username: \t");
@@ -86,7 +97,12 @@ void get_name_and_room(char * name, int * room_ptr)
     sscanf(temp,"%d",room_ptr);
 }
 
-
+/**
+ * @brief checks if the action is allowed at the current g_level access level of the client
+ * 
+ * @param request the action that the client wants to perform
+ * @return int is the action allowed
+ */
 int check_action_permission(enum request_e request)
 {
     int ret = 0;
@@ -101,6 +117,12 @@ int check_action_permission(enum request_e request)
     return ret;
 }
 
+/**
+ * @brief Get stdin input from the client and call ccorrect handler
+ * 
+ * @param arg sockfd
+ * @return void* NULL
+ */
 void * get_input(void * arg)
 {
     int sockfd = *((int*) arg);
@@ -205,6 +227,12 @@ void * get_input(void * arg)
     return NULL;
 }
 
+/**
+ * @brief the function listens for messages from the server
+ * 
+ * @param arg sockfd
+ * @return void* NULL (when server disconected)
+ */
 void * handle_connection (void* arg)
 {
     int sockfd = *((int *) arg);

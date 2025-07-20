@@ -9,8 +9,8 @@ extern _Atomic enum request_e g_server_reply;
 void wait_for_server_reply(enum request_e msg)
 {
     printf("waiting for %d\n", msg);
-    g_server_reply = ZERO;
-    while (g_server_reply == ZERO)
+    g_server_reply = WAITING;
+    while (g_server_reply == WAITING)
     {
         usleep(10000); // 10 ms
     }

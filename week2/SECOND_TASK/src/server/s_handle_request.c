@@ -9,9 +9,14 @@
 
 extern room_s g_rooms [ROOM_COUNT];
 
+/**
+ * @brief the function reads the content of the request message and signs up client in if he is successfull
+ * 
+ * @param buf the message string striped of the request number that contains the name and password
+ * @return message_s* a message to send to the user "-1" fail, "0" success 
+ */
 message_s * handle_signup(const char * buf)
 {
-    printf("recived signup\n");
     int reading_index = 0;
 
     char name [MESSAGE_LENGTH];
@@ -40,9 +45,15 @@ message_s * handle_signup(const char * buf)
     return response_message;
 }
 
+/**
+ * @brief the function reads the content of the request message and logs client in if he is successfull
+ * 
+ * @param buf message with name and password
+ * @param client client that wants to log in (his status will be changed if he loges in successfully)
+ * @return message_s* the responce message "-1" fail, "0" success 
+ */
 message_s * handle_login(const char * buf, client_s * client)
 {
-    printf("recived login\n");
     int reading_index = 0;
 
     char name [MESSAGE_LENGTH];
@@ -72,6 +83,13 @@ message_s * handle_login(const char * buf, client_s * client)
     return response_message;
 }
 
+/**
+ * @brief the function reads the content of the request message and adds him to room in if he is successfull
+ * 
+ * @param buf the message with the name and room num to try and enter
+ * @param client client that wants to enter room 
+ * @return message_s* the responce message "-1" fail, "0" success 
+ */
 message_s * handle_enter_room(const char * buf, client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
@@ -119,6 +137,13 @@ message_s * handle_enter_room(const char * buf, client_s * client)
     return message;
 }
 
+/**
+ * @brief the function reads the content of the request message and removes him from room if he is successfull
+ * 
+ * @param buf the message with the name
+ * @param client client that wants to leave room 
+ * @return message_s*  the responce message "-1" fail, "0" success 
+ */
 message_s * handle_exit_room(const char * buf,client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
@@ -146,6 +171,13 @@ message_s * handle_exit_room(const char * buf,client_s * client)
     return message;
 }
 
+/**
+ * @brief  the function reads the content of the request message and sends message in room under the name 
+ * 
+ * @param buf the message with the name and message to send to room
+ * @param client client that wants to seend to room a message
+ * @return message_s* NULL
+ */
 message_s * handle_send_to_room(const char *buf, client_s * client)
 {
     // message_s * message = malloc(sizeof(message_s));
@@ -169,6 +201,14 @@ message_s * handle_send_to_room(const char *buf, client_s * client)
     return NULL;
 }
 
+/**
+ * @brief the function calls the apropriete request handler for each request and returns the message it gets from the handler
+ * 
+ * @param num request number
+ * @param buf the rest of the message (without request number)
+ * @param ptr client pointer 
+ * @return message_s* message that it got from handler
+ */
 message_s * handle_message(int num, const char * buf, void * ptr)
 {
     client_s * client = (client_s *) ptr;
@@ -202,7 +242,13 @@ message_s * handle_message(int num, const char * buf, void * ptr)
 }
 
 
-
+/**
+ * @brief the function tries to signup the client (succes if the client doesnt already exist)
+ * 
+ * @param name the username of the client
+ * @param password the password of the client
+ * @return int 1 succesfull signup, 0 didnt succeed
+ */
 int process_signup(const char *name, const char *password)
 {
     int signup_error = 0;
@@ -244,7 +290,13 @@ int process_signup(const char *name, const char *password)
 
     return !signup_error;
 }
-
+/**
+ * @brief the function tries to find the client and checks if the password is correct
+ * 
+ * @param name clients name
+ * @param password attempted password
+ * @return int was the client found and the password mach?
+ */
 int process_login(const char *name, const char *password)
 {
     int login_error = 1;
@@ -274,7 +326,12 @@ int process_login(const char *name, const char *password)
     return(! login_error );
 }
 
-
+/**
+ * @brief the function creates a message with the names of the available room
+ * 
+ * @param client client that wants to get the list of rooms
+ * @return message_s* list of rooms or {-1} if unssuccessfull
+ */
 message_s * handle_room_lst_message(client_s * client)
 {
     message_s * message = NULL;
@@ -293,7 +350,13 @@ message_s * handle_room_lst_message(client_s * client)
     return message;
 }
 
-
+/**
+ * @brief the function tries to add client to room
+ * 
+ * @param client client to add to the room
+ * @param room_num room that the client wants to enter
+ * @return int did the client enter the room
+ */
 int process_enter_room(client_ptr_t client,int room_num)
 {
 
@@ -307,6 +370,12 @@ int process_enter_room(client_ptr_t client,int room_num)
     return !enter_room_error;
 }
 
+/**
+ * @brief the function tries to remove client from room
+ * 
+ * @param client client that wants to leave the room
+ * @return int did the client leave the room
+ */
 int proccess_exit_room(client_s * client)
 {
     int enter_room_error = 0;

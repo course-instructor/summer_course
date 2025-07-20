@@ -9,11 +9,16 @@
 
 int g_current_clients = 0;
 
+/**
+ * @brief function getting messages from a client and responding to them acordingly
+ * 
+ * @param arg void * (client_ptr_t) the client to listen to
+ * @return void* 
+ */
 void *handle_client(void *arg)
 {
     printf("handling new client\n");
     client_ptr_t client = (client_ptr_t)arg;
-    // send(client->sockfd, "Welcome to the chat!\n", 22, 0);
 
     while (get_message(client));
 

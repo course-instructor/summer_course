@@ -6,6 +6,7 @@
 
 #define MESSAGE_LENGTH 256
 
+/// @brief the connection access status of the client
 enum connection_e
 {
   NOT_CONNECTED,
@@ -13,6 +14,7 @@ enum connection_e
   IN_ROOM
 };
 
+/// @brief request codes that the user sends to the server
 enum request_e
 {
     SIGN_UP       = 100,
@@ -22,6 +24,8 @@ enum request_e
     MESSAGE_ROOM,
     EXIT_ROOM,
 
+
+
     SIGN_UP_RESPONSE       = 200,
     LOG_IN_RESPONSE,
     LIST_OF_ROOMS_RESPONSE,
@@ -30,7 +34,7 @@ enum request_e
     MESSAGE_FROM_SERVER,
     EXIT_ROOM_RESPONSE     = 211,
 
-    ZERO = 0
+    WAITING = 0
 };
 
 typedef struct message_s

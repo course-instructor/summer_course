@@ -5,6 +5,13 @@
 extern _Atomic enum connection_e g_level;
 _Atomic enum request_e g_server_reply;
 
+/**
+ * @brief 
+ * 
+ * @param num 
+ * @param buf 
+ * @return message_s* 
+ */
 message_s * handle_message(int num, const char * buf, void * )
 {
     int i = 0;

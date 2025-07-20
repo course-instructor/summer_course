@@ -7,6 +7,11 @@
 room_s g_rooms[ROOM_COUNT];
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/**
+ * @brief creates and initializes a client_list_t
+ * 
+ * @return client_list_t the newly created client linked list
+ */
 client_list_t innit_clients(void)
 
 {
@@ -16,6 +21,12 @@ client_list_t innit_clients(void)
     return head;
 }
 
+/**
+ * @brief adds a client to a client linked list if it isnt already there, the first one will be added to the head->next and not to head->client so head->client will be NULL
+ * 
+ * @param head the start of the client linked list
+ * @param new_client the client to be added to the linked list
+ */
 void add_client(client_list_t head, client_ptr_t new_client)
 {
     client_list_t cur = head;
@@ -37,10 +48,18 @@ void add_client(client_list_t head, client_ptr_t new_client)
     printf("added client\n");
 }
 
+/**
+ * @brief removes client from linked listif exists
+ * 
+ * @param head start of client linked list
+ * @param rem 
+ * @return int was the client removed? (1,0)
+ */
 int rem_client(client_list_t head, client_ptr_t rem)
 {
     client_list_t prev = head, cur = head->next;
-    while (cur) {
+    while (cur) 
+    {
         if (cur->client == rem)
         {
             prev->next = cur->next;
@@ -53,6 +72,12 @@ int rem_client(client_list_t head, client_ptr_t rem)
     return 0;
 }
 
+/**
+ * @brief adds client to room and locks the room 
+ * 
+ * @param room room to add client
+ * @param client client to add to the room
+ */
 void room_add_client(room_s *room, client_ptr_t client)
 {
     pthread_mutex_lock(& room->mutex);
@@ -60,6 +85,12 @@ void room_add_client(room_s *room, client_ptr_t client)
     pthread_mutex_unlock(& room->mutex);
 }
 
+/**
+ * @brief removes client from room and locks the room 
+ * 
+ * @param room room to remove client from
+ * @param client client to remove from room
+ */
 void room_rem_client(room_s *room, client_ptr_t client)
 {
     pthread_mutex_lock(& room->mutex);
@@ -67,6 +98,14 @@ void room_rem_client(room_s *room, client_ptr_t client)
     pthread_mutex_unlock(& room->mutex);
 }
 
+/**
+ * @brief send message to everyone in a room except one client 
+ * 
+ * @param room room that the message will be sent in
+ * @param ignore a client to ignore (the client that sent the message)
+ * @param name the name that the client used to send the message
+ * @param str the message to send
+ */
 void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* str)
 {
 
@@ -99,7 +138,10 @@ void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* 
     pthread_mutex_unlock(& room->mutex);
 }
 
-
+/**
+ * @brief initialize g_rooms and give them names
+ * 
+ */
 void innit_g_rooms(void)
 {
     for(int i = 0; i <ROOM_COUNT; i++)
