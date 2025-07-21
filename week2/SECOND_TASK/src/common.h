@@ -26,7 +26,9 @@ enum request_e
     EXIT_ROOM,
 
 
-
+};
+enum responce_e
+{
     SIGN_UP_RESPONSE       = 200,
     LOG_IN_RESPONSE,
     LIST_OF_ROOMS_RESPONSE,
@@ -38,10 +40,18 @@ enum request_e
     WAITING = 0
 };
 
+typedef union
+{
+    enum request_e req;
+    enum responce_e res;
+} message_code_u;
+
+
 /// @brief message struct that will be reformated into a string before sending
 typedef struct message_s
 {
-    enum request_e request_num; //request number of the message(what tipe of message)
+    message_code_u message_num; //request number of the message(what tipe of message)
+    int code_tag; //0 for req, 1 for res
     const char **params; // a NULL terminated array of params to be passed
 } message_s;
 

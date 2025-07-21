@@ -5,14 +5,14 @@
 #include <stdlib.h>
 extern int usleep (__useconds_t __useconds); // unistd.h
 
-extern _Atomic enum request_e g_server_reply;
+extern _Atomic enum responce_e g_server_reply;
 
 /**
  * @brief the function makes the client wait after a request that might change the clients state untill the server responds
  *
  * @param msg the responce that the function is waiting for from the server
  */
-void wait_for_server_reply(enum request_e msg)
+void wait_for_server_reply(enum responce_e msg)
 {
     printf("waiting for %d\n", msg);
     g_server_reply = WAITING;
@@ -37,7 +37,8 @@ void wait_for_server_reply(enum request_e msg)
 void send_signup_message(int sockfd, const char *name, const char *password)
 {
     message_s message;
-    message.request_num = SIGN_UP;
+    message.message_num.req = SIGN_UP;
+    message.code_tag = 0; //req
 
     const char * temp [] = {name, password,NULL};
 
@@ -58,7 +59,9 @@ void send_signup_message(int sockfd, const char *name, const char *password)
 void send_login_message(int sockfd, const char *name, const char *password)
 {
     message_s message;
-    message.request_num = LOG_IN;
+    message.message_num.req = LOG_IN;
+    message.code_tag = 0; //req
+
 
     const char * temp [] = {name, password, NULL};
 
@@ -76,7 +79,8 @@ void send_login_message(int sockfd, const char *name, const char *password)
 void send_room_lst_message(int sockfd)
 {
     message_s message;
-    message.request_num = LIST_OF_ROOMS;
+    message.message_num.req = LIST_OF_ROOMS;
+    message.code_tag = 0; //req
 
 
     message.params = NULL;
@@ -95,7 +99,9 @@ void send_room_lst_message(int sockfd)
 void send_enter_room_message(int sockfd, const char* name, int room)
 {
     message_s message;
-    message.request_num = ENTER_ROOM;
+    message.message_num.req = ENTER_ROOM;
+    message.code_tag = 0; //req
+
 
     char room_str[16];
     snprintf(room_str, sizeof room_str, "%d", room);
@@ -116,7 +122,8 @@ void send_enter_room_message(int sockfd, const char* name, int room)
 void send_leave_room_message(int sockfd,const char * name)
 {
     message_s message;
-    message.request_num = EXIT_ROOM;
+    message.message_num.req = EXIT_ROOM;
+    message.code_tag = 0; //req
 
 
     const char * temp [] = {name, NULL};
@@ -136,7 +143,8 @@ void send_leave_room_message(int sockfd,const char * name)
 void send_in_room_message(int sockfd,const char * name, const char * str)
 {
     message_s message;
-    message.request_num = MESSAGE_ROOM;
+    message.message_num.req = MESSAGE_ROOM;
+    message.code_tag = 0; //req
 
 
     const char * temp [] = {name, str, NULL};

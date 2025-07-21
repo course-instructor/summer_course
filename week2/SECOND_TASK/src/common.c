@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 /**
- * @brief sends message to a socket: request_num param1 param2 ... after each param seperating char, at the end end_char
+ * @brief sends message to a socket: message_num param1 param2 ... after each param seperating char, at the end end_char
  *
  * @param sockfd socket to send to
  * @param message mesage_s pointer (to write the params and request number to the socket)
@@ -16,7 +16,10 @@
 int send_message(int sockfd, const message_s *message)
 {
     char payload[MESSAGE_LENGTH];
-    int  pos = snprintf(payload, sizeof payload, "%d%c",message->request_num,SEPERATING_CHAR);
+
+    int number = (message->code_tag)?(message->message_num.res):(message->message_num.res);
+
+    int  pos = snprintf(payload, sizeof payload, "%d%c",number ,SEPERATING_CHAR);
 
     if(message->params)
     {

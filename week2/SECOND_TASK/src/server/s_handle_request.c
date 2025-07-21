@@ -29,7 +29,9 @@ message_s * handle_signup(const char * buf)
     int success = process_signup(name,pass);
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
-    response_message->request_num = SIGN_UP_RESPONSE;
+    response_message->message_num.res = SIGN_UP_RESPONSE;
+    response_message->code_tag = 1; //res
+
 
     if(success)
     {
@@ -65,7 +67,8 @@ message_s * handle_login(const char * buf, client_s * client)
     int success = process_login(name,pass);
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
-    response_message->request_num = LOG_IN_RESPONSE;
+    response_message->message_num.res = LOG_IN_RESPONSE;
+    response_message->code_tag = 1; //res
 
     if(success)
     {
@@ -91,7 +94,8 @@ message_s * handle_login(const char * buf, client_s * client)
 message_s * handle_enter_room(const char * buf, client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
-    message->request_num = ENTER_ROOM_RESPONSE;
+    message->message_num.res = ENTER_ROOM_RESPONSE;
+    message->code_tag = 1; //res
 
     int reading_index = 0;
 
@@ -144,7 +148,8 @@ message_s * handle_enter_room(const char * buf, client_s * client)
 message_s * handle_exit_room(const char * buf,client_s * client)
 {
     message_s * message = malloc(sizeof(message_s));
-    message->request_num = EXIT_ROOM_RESPONSE;
+    message->message_num.res = EXIT_ROOM_RESPONSE;
+    message->code_tag = 1;//res
 
     int reading_index = 0;
 
@@ -329,7 +334,9 @@ message_s * handle_room_lst_message(client_s * client)
     if((client -> status) == CONNECTED)
     {
         message = malloc(sizeof(message_s));
-        message->request_num = LIST_OF_ROOMS_RESPONSE;
+        message->message_num.res = LIST_OF_ROOMS_RESPONSE;
+        message->code_tag = 1;//res
+
         message->params = malloc((ROOM_COUNT + 1) * sizeof(char *)); //room names + NULL terminator
 
         for(int i = 0; i < ROOM_COUNT; i++)

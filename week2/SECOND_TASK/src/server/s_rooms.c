@@ -110,7 +110,7 @@ void broadcast(room_s *room, client_ptr_t ignore, const char* name, const char* 
 {
 
     message_s message;
-    message.request_num = name ? MESSAGE_FROM_CLIENT : MESSAGE_FROM_SERVER;
+    message.message_num.res = name ? MESSAGE_FROM_CLIENT : MESSAGE_FROM_SERVER;
 
     const char * with_name [] = { name, str, NULL};
     const char * without_name [] = { str, NULL};
