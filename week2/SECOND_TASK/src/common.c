@@ -17,7 +17,7 @@ int send_message(int sockfd, const message_s *message)
 {
     char payload[MESSAGE_LENGTH];
 
-    int number = (message->code_tag)?(message->message_num.res):(message->message_num.res);
+    int number = (message->code_tag)?(message->message_num.res):(message->message_num.req);
 
     int  pos = snprintf(payload, sizeof payload, "%d%c",number ,SEPERATING_CHAR);
 
