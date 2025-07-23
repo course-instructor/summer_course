@@ -71,16 +71,11 @@ int main(void)
                     }
                     else
                     {
-                        printf("Invalid input for u or v. They must be between 0 and %d.\n", N - 1);
                         break;
                     }
                 }
             }
         }
-    }
-    else
-    {
-        printf("Invalid input for u.\n");
     }
     printf("Exiting the program.\n");
     return 0;

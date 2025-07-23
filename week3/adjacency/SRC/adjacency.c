@@ -54,6 +54,12 @@ int check_init_mat(adjmat_ptr adjmat)
                 {
                     if(adjmat->matrix[row][col] == 1)
                     {
+                        if(row == col)
+                        {
+                            retval = 0; 
+                            printf("A node can't point on itself\n");
+                            break;
+                        }
                         if(count_ones == 1)
                         {
                             retval = 0;
