@@ -2,29 +2,22 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -pedantic -ansi -g
 
-# Folders
-SRC_DIR = src
-INC_DIR = headers
-OBJ_DIR = obj
-BIN_DIR = bin
+# Source and headers
+SRC = src/tree.c
+INCLUDES = -Iheaders
 
-# Files
-SRC = $(SRC_DIR)/tree.c
-OBJ = $(OBJ_DIR)/tree.o
-TARGET = $(BIN_DIR)/tree_program
+# Executable
+TARGET = tree_program
 
-# Default target
+# Default rule
 all: $(TARGET)
 
-# Link the final executable
-$(TARGET): $(OBJ) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^
+# Build the executable directly
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(TARGET) $(SRC)
 
-# Compile source to object file
-$(OBJ): $(SRC) | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
-
-
-# Clean build artifacts
+# Clean
 clean:
-	rm -rf
+	rm -f $(TARGET)
+
+.PHONY: all clean

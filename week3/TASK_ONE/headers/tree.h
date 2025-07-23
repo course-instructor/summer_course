@@ -2,9 +2,9 @@
 
 #define N 3
 
-typedef enum 
+typedef enum
 {
-    FALSE, TRUE,
+    FALSE, TRUE
 } boolean_e;
 
 typedef boolean_e adjmat [N][N] ;
