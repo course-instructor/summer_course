@@ -13,5 +13,10 @@ typedef struct
 
 int find_path(adjmat_ptr adjmat, int u, int v);
 int path(adjmat_ptr adjmat,int u , int v);
+int init_matrix(adjmat_ptr adjmat);
+int print_matrix(adjmat_ptr adjmat);
+int check_init_mat(adjmat_ptr adjmat);
+int check_eof(int flag_u);
+
 
 #endif

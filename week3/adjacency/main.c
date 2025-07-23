@@ -3,49 +3,6 @@
 #include <stdio.h>
 
 /**
- * @brief we get values to the matrix of adjacency.
- * 
- * @param adjmat the matrix we get values into
- * @return int 
- */
-
-int init_matrix(adjmat_ptr adjmat)
-{
-    int row, col;
-    printf("The size of N is: %d\n", N);
-    for(row = 0; row < N; row++)
-    {
-        for(col = 0; col < N; col++)
-        {
-            printf("Enter the value for adjency matrix[%d][%d]: ", row, col);
-            scanf("%d", &adjmat->matrix[row][col]);
-        }
-    }
-    return 1;
-}
-
-/**
- * @brief this function prints the matrix of adjacency.
- * 
- * @param adjmat the matrix we print
- * @return int 
- */
-
-int print_matrix(adjmat_ptr adjmat)
-{
-    int row, col;
-    for(row = 0; row < N; row++)
-    {
-        for(col = 0; col < N; col++)
-        {
-            printf("%d ", adjmat->matrix[row][col]);
-        }
-        printf("\n");
-    }
-    return 1;
-}
-
-/**
  * @brief Main function to demonstrate the adjacency matrix path finding.
  * 
  * @return int Exit status of the program.
@@ -53,28 +10,77 @@ int print_matrix(adjmat_ptr adjmat)
 int main(void)
 {
     adjmat my_adjmat;
+    int retval;
     int is_eof_u, is_eof_v;
     init_matrix(&my_adjmat);
-    print_matrix(&my_adjmat);
-    int u, v;
-    printf("enter the value of u: \n");
-    is_eof_u = scanf("%d", &u);
-    if(is_eof_u != EOF)
+    retval = print_matrix(&my_adjmat);
+    /* if the matrix has valid values */
+    if(retval)
     {
-        printf("enter the value of v: \n");
-        is_eof_v = scanf("%d", &v);
-        if(is_eof_v != EOF)
+        int u, v;
+        printf("enter the value of u: \n");
+        is_eof_u = scanf("%d", &u);
+        retval = check_eof(is_eof_u);
+        /* if we didnt get an EOF in u we continue*/
+        if(retval)
         {
-           while(u != -1 && v != -1)
-           {
-            int result = path(&my_adjmat, u, v);
-            printf("Is there a path from %d to %d? %s\n", u, v, result ? "Yes, Good job!" : "No :(");
-            printf("enter the value of u: \n");
-            scanf("%d", &u);
             printf("enter the value of v: \n");
-            scanf("%d", &v);
-           }
+            is_eof_v = scanf("%d", &v);
+            retval = check_eof(is_eof_v);
+            if(!retval)
+            {
+                printf("EOF reached for v input.\n");
+                retval = 0;
+            }
+            /* if we didnt get an EOF for v we continue*/
+            if(retval)
+            {
+                /* same logic but in an endless loop until we get -1 -1 or ctrl + d*/
+                while(1)
+                {
+                    if(!(u < 0 || u >= N || v < 0 || v >= N))
+                    {
+                        retval = path(&my_adjmat, u, v);
+                        if(retval)
+                        {
+                            printf("There IS a path from %d to %d.\n", u, v);
+                        }
+                        else
+                        {
+                            printf("There is NO path from %d to %d.\n", u, v);
+                        }
+                        printf("Enter the value of u: \n");
+                        is_eof_u = scanf("%d", &u);
+                        retval = check_eof(is_eof_u);
+                        if(retval)
+                        {
+                            printf("Enter the value of v: \n");
+                            is_eof_v = scanf("%d", &v);
+                            retval = check_eof(is_eof_v);
+                        }
+                        else
+                        {
+                            printf("EOF reached for u input.\n");
+                            break;
+                        }
+                        if(!retval)
+                        {
+                            printf("EOF reached for v input.\n");
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        printf("Invalid input for u or v. They must be between 0 and %d.\n", N - 1);
+                        break;
+                    }
+                }
+            }
         }
+    }
+    else
+    {
+        printf("Invalid input for u.\n");
     }
     printf("Exiting the program.\n");
     return 0;
