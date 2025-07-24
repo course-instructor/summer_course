@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "string": "c",
+        "synthwave84.brightness": "0.8",
+        "stdint-gcc.h": "c",
+        "stdint.h": "c",
+        "cstdint": "c"
+    }
+    
+}
