@@ -1,0 +1,21 @@
+func{
+
+    if(hash[this_file_name] == FALSE)
+    {
+        return;
+    }
+    hash[this_file_name] = FALSE;
+
+
+    while(EOD)
+    {
+        val = check_code() 
+        
+        if(in_hash(val,hash))
+        {
+            func(hash[val])
+        }
+    }
+
+}
+
