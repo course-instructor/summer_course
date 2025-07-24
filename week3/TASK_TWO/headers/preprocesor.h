@@ -20,7 +20,7 @@ boolean_e check_comment_start(char chr, FILE * file);
 boolean_e check_comment_end(char chr, FILE *file);
 void remove_comments( char *c_file_name);
 
-char * find_header(char * line);
+void find_header(char * line, char * ret);
 void check_storm(ENTRY * entry, char * file_path);
 boolean_e hash_search(char * file_path);
 void hash_add(fathers_file_s file);

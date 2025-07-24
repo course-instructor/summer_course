@@ -113,72 +113,56 @@ void remove_comments( char * c_file_name)
 }
 
 
-char * find_header(char * line)
+void find_header(char * line, char * ret)
 {
-    int chr;
-    char file_name[LINE_LENGTH];
+    char file_name[FILE_NAME_LENGTH];
 
-    sscanf(line, "#include \"%[^\"]\" %d", file_name, chr);
-    if(chr == EOF || chr == '\n')
+    if(sscanf(line, " #include \"%[^\"]\"", file_name) == 1)
     {
-        realpath(file_name,file_name);
+        if(!realpath(file_name,file_name))
+        {
+            perror("error realpath in find_header\n");
+            *file_name = NULL;
+        }
     }
     else
     {
         *file_name = NULL;
     }
-    return(file_name);
+    strncpy(ret, file_name, FILE_NAME_LENGTH);
+    ret[FILE_NAME_LENGTH-1] = '\0';
+
 }
 
-void check_storm(ENTRY * entry, char * file_path)
+boolean_e check_storm(ENTRY * entry, char * file_path)
 {
+    boolean_e ret;
 
     if(strstr((char *)entry->data,file_path))
     {
         printf("storm detected!\n");
+        ret = TRUE;
     }
     else
     {
-        entry->data = realloc(entry->data, sizeof(entry->data ) + FILE_NAME_LENGTH);
-        strcat((char *) entry->data, file_path);
-    }
-}
 
-boolean_e hash_search(char * file_path)
-{
-    ENTRY temp;
-    boolean_e ret = FALSE;
 
-    temp.key = file_path;
-
-    if(hsearch(temp, FIND))
-    {
-        ret = TRUE;
+        ret = FALSE;
     }
 
-    return ret;
-
+    return(ret);
 }
 
 
-void hash_add(fathers_file_s file)
-{
-    ENTRY temp;
-    boolean_e ret = FALSE;
 
-    temp.key = file.file_name;
-    temp.data = file.fathers;
-
-    hsearch(temp, ENTER);
-}
 
 void handle_call(FILE * c2_file,char * header_path, char * father_path)
 {
-    ENTRY * entry;
+    ENTRY entry;
     FILE * header_file = fopen(header_path, "r");
 
-    entry->key = header_file;
-    entry->data = NULL;
+    entry.key = header_path;
+    entry.data = NULL;
 
     if(!header_file)
     {
@@ -186,25 +170,27 @@ void handle_call(FILE * c2_file,char * header_path, char * father_path)
     }
     else
     {
-        strncpy(entry->key, father_path, LINE_LENGTH);
-        check_storm(entry, father_path);
-
-        if(entry = hsearch(*entry,FIND))
+        ENTRY * temp = hsearch(entry,FIND);
+        if(!temp)
         {
-            strncpy(entry->data, header_path, LINE_LENGTH);
 
-
-            hsearch(*entry, ENTER);
+            strncpy((char *)entry.data, father_path,FILE_NAME_LENGTH);
+            ((char *)entry.data) [FILE_NAME_LENGTH - 1] = '\0';
+            hsearch(entry, ENTER);
 
             func(c2_file, header_file,header_path);
+
         }
         else
         {
+            if(check_storm(temp, father_path) != FALSE)
+            {
+                strncat((char *) temp->data, father_path, FILE_NAME_LENGTH); // add father
+                hsearch(*temp, ENTER); // push to hash
+            }
 
-            strncpy((char*)entry->data,"\0",sizeof(char));
-            strncat((char *)entry->data, father_path, LINE_LENGTH);
-            hsearch(*entry, ENTER);
         }
+        fclose(header_file);
     }
 }
 
@@ -214,26 +200,20 @@ void func(FILE * file, FILE * head, char * father_path)
 {
     char line [LINE_LENGTH];
     char header_path[FILE_NAME_LENGTH];
+    header_path[0] = '\0';
 
     while (fgets(line,LINE_LENGTH, head))
     {
-        strncpy(header_path, find_header(line), FILE_NAME_LENGTH);
+        find_header(line, header_path);
         if(*header_path)
         {
-            FILE * res = fopen(header_path, "r");
-            if(res)
-            {
-
-                handle_call(file,res,father_path);
-                fclose(res);
-            }
+            handle_call(file,header_path,father_path);
         }
         else
         {
-            write_line(line);
+            fwrite(line, sizeof(char), LINE_LENGTH, file);
         }
     }
-
 }
 
 void turn_c1_to_c2(char * c1_file_name)
