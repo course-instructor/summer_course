@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -pedantic -ansi -g
+CFLAGS = -Wall -Wextra -std=c99 -pedantic -ansi -g -D_DEFAULT_SOURCE
 
 # Source and headers
 SRC = src/preprocessor.c
