@@ -1,0 +1,3 @@
+<<< d.h
+#include "test/b.h"
+>>> d.h

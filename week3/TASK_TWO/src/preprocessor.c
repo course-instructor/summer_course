@@ -128,12 +128,10 @@ void find_header(char *line, char *ret)
     ret[FILE_NAME_LENGTH - 1] = '\0';
 }
 
-boolean_e process_header(FILE *c2_file, char *header_path, char *father_path, long depth)
+void process_header(FILE *c2_file, char *header_path)
 {
     ENTRY entry;
     FILE *header_file = fopen(header_path, "r");
-    char name_and_father[2 * FILE_NAME_LENGTH + 3];
-    boolean_e ret = FALSE;
 
     entry.data = NULL;
 
@@ -144,42 +142,55 @@ boolean_e process_header(FILE *c2_file, char *header_path, char *father_path, lo
     else
     {
         ENTRY * temp;
-        snprintf(name_and_father, sizeof(name_and_father), "%s//%s", header_path, father_path);
-        printf("try %s\n", name_and_father);
+        entry.key = strdup(header_path);
+        /* printf("try %s\n", header_path); */
 
-        entry.key = strdup(name_and_father);
+        temp = hsearch(entry, FIND);
 
-        temp = hsearch(entry, FIND); /*header_path//father_path */
-
-        if(!temp)
+        if (temp == NULL)
         {
-            entry.data = (void *)depth;
+            int *p = malloc(sizeof(int));
+            *p = 1;
+            entry.data = p;
             hsearch(entry,ENTER);
-            process_file(c2_file, header_file, header_path);
-        }
-        else if (temp->data != (void *)depth)
-        {
-            printf("storm detected!\n");
-            ret = TRUE;
+            /* printf("new %s\n", header_path); */
+            process_file(c2_file, header_file);
         }
         else
         {
-            printf("depth %ld %s\n", depth, header_path);
-            process_file(c2_file, header_file, header_path);
+            int * p = (int*)(temp->data);
+            if (*p == 0)
+            {
+                *p = 1;
+                /* printf("again %s\n", header_path); */
+                process_file(c2_file, header_file);
+            }
+            else
+            {
+                printf("storm detected! %s\n", header_path);
+            }
         }
 
         fclose(header_file);
-    }
 
-    return ret;
+        temp = hsearch(entry, FIND);
+        if (temp == NULL || temp->data == NULL)
+        {
+            printf("ERROR for %s\n", header_path);
+        }
+        else
+        {
+            int * p = (int*) temp->data;
+            *p = 0;
+            /* printf("done %s\n", temp->key); */
+        }
+    }
 }
 
-void process_file(FILE *c2_file, FILE *input, char *input_path)
+void process_file(FILE *c2_file, FILE *input)
 {
     char line[LINE_LENGTH];
     char header_path[FILE_NAME_LENGTH];
-    static int depth = 0;
-    depth++;
 
     header_path[0] = '\0';
 
@@ -189,7 +200,7 @@ void process_file(FILE *c2_file, FILE *input, char *input_path)
         /* printf("header: %s\n", header_path); */
         if (*header_path)
         {
-            process_header(c2_file, header_path, input_path, depth);
+            process_header(c2_file, header_path);
         }
         else
         {
@@ -199,8 +210,6 @@ void process_file(FILE *c2_file, FILE *input, char *input_path)
     }
     fputc('\n', c2_file);
     fflush(c2_file);
-
-    depth--;
 }
 
 void turn_c1_to_c2(char *c1_file_name)
@@ -227,7 +236,7 @@ void turn_c1_to_c2(char *c1_file_name)
 
         else
         {
-            process_file(c2_file, c1_file, c1_file_name);
+            process_file(c2_file, c1_file);
         }
 
         hdestroy();

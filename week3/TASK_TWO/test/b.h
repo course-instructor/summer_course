@@ -1,0 +1,6 @@
+<<< b.h
+#define flag
+printf("b");
+
+#include "test/c.h"
+>>> b.h

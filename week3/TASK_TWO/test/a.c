@@ -1,0 +1,5 @@
+#include "test/b.h"
+printf("a");
+
+#include "test/d.h"
+#include "test/b.h"

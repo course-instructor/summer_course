@@ -15,8 +15,8 @@ boolean_e check_comment_end(char chr, FILE *file);
 void remove_comments( char *c_file_name);
 
 void find_header(char * line, char * ret);
-boolean_e process_header(FILE * c2_file,char * header_path, char * father_path, long depth);
-void process_file(FILE * file, FILE * head, char * father_path);
+void process_header(FILE * c2_file,char * header_path);
+void process_file(FILE * file, FILE * head);
 void turn_c1_to_c2(char * c1_file_name);
 
 
