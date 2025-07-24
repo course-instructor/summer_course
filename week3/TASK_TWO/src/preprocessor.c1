@@ -28,7 +28,6 @@ boolean_e check_comment_start(char chr, FILE * file)
     return ret;
 }
 
-
 boolean_e check_comment_end(char chr, FILE * file)
 {
     boolean_e ret = FALSE;
@@ -109,77 +108,6 @@ void remove_comments( char * c_file_name)
     fclose(c1_file);
 }
 
-
-void find_header(char * line, char * * ret)
-{
-    char chr;
-    char file_name[LINE_LENGTH];
-
-    sscanf(line, "#include \"%s.h\" %d", &file_name, &chr);
-    if(chr == EOF || chr == '\n')
-    {
-        *ret = file_name;
-    }
-    else
-    {
-        *ret = NULL;
-    }
-    return (ret);
-}
-
-void handle_call(FILE * file,FILE * header)
-{
-    if(!in_hassh(header))
-    {
-        add_hash(header);
-        func(file,header);
-    }
-}
-
-FILE * handle_include(char * header_path)
-{
-    FILE * header = fopen(header_path, "r");
-    if(header)
-    {
-
-    }
-}
-
-boolean_e func(FILE * file, FILE * head)
-{
-    char line [LINE_LENGTH];
-    char header_path[LINE_LENGTH];
-
-    while (fgets(line,LINE_LENGTH, &head))
-    {
-        find_header(line, &header_path);
-        if(*header_path)
-        {
-            FILE * res = fopen(header_path, "r");
-            if(res)
-            {
-
-                handle_call(file,res);
-                fclose(res);
-            }
-        }
-        else
-        {
-            write_line(line);
-        }
-    }
-
-}
-
-boolean_e detect_loop(char * file_name)
-{
-    char line [LINE_LENGTH];
-
-    FILE * file = fopen(file_name,"r");
-
-    fgets(line,LINE_LENGTH,&file);
-
-}
 
 int main()
 {
