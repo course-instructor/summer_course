@@ -160,6 +160,10 @@ void CreateAndBindSockets(struct addrinfo *servinfo, int * pSockfd)
 
 
 }
+/**
+ * @brief Create a a new thread to handle user's requests
+ * @param threads_flags_is_running flag which tells if the flag is the thread is still running
+ */
 void newUserThread(int * threads_flags_is_running,int sockfd,struct args_s thread_arguments)
 {
 	pthread_t thread;
@@ -209,6 +213,7 @@ void socketListener(int sockfd)
 		perror("listen");
 		exit(1);
 	}
+
     while(1) 
 	{  /* main accept() loop */ 
 		sin_size = sizeof their_addr;
@@ -223,6 +228,8 @@ void socketListener(int sockfd)
 			s, sizeof s);
 		printf("server: got connection from %s\n", s);
 
+
+		/*Create new user thread */
 		newUserThread(threads_id,new_fd,thread_arguments);
 		
 	}

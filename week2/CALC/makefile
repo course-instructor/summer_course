@@ -1,16 +1,13 @@
-# Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g -ansi -std=c99
 
-# Source files (replace these with your actual filenames)
 SRCS = myset.c set.c
 OBJS = $(SRCS:.c=.o)
-DEPS = set.h
+DEPS = set.h myset.h
+PROGRAM_ARGS = file.txt
 
-# Output binary
 TARGET = setprog
 
-# Default rule
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -20,7 +17,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(TARGET)
-	./$(TARGET)
+	./$(TARGET) 
+
+runFile: $(TARGET)
+	./$(TARGET) $(PROGRAM_ARGS)
 
 valgrind: $(TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)

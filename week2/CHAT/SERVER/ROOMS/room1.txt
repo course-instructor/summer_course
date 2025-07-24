@@ -716,3 +716,10 @@
 [SERVER] User "ABCD" has exited the room.
 [ASHER] /exut
 [SERVER] User "ASHER" has exited the room.
+[SERVER] User "BENAYA" has joined the room.
+[SERVER] User "ASHER" has joined the room.
+[ASHER] HELLO
+[ASHER] MA BOY
+[BENAYA] WHAT SUP
+[BENAYA] YEEE
+[SERVER] User "BENAYA" has exited the room.

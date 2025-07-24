@@ -1,6 +1,8 @@
 #ifndef SET_H
 #define SET_H
 #include <stdio.h>
+#include <stdint.h>
+
 typedef long long set[2];
 
 void initialize_set(set* s);
@@ -10,6 +12,5 @@ void union_set(set ** s);
 void intersect_set(set ** s);
 void sub_set(set **s);
 void symdiff_set(set ** s);
-
 
 #endif

@@ -19,3 +19,5 @@
 [SERVER] User "ASHER" has exited the room.
 [SERVER] User "ASHER" has joined the room.
 [SERVER] User "ASHER" has exited the room.
+[SERVER] User "BENAYA" has joined the room.
+[BENAYA] HELLO

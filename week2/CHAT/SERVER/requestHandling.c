@@ -44,7 +44,6 @@ static const request requests[AMOUNT_OF_REQUESTS] =
 	{REQUEST_SEND		,REPLY_SEND		,	IN_ROOM_USER	,	2	,send_args		,	(void *)&send_user		},
 	{REQUEST_EXIT		,REPLY_EXIT		,	IN_ROOM_USER	,	1	,exit_args		,	(void *)&exit_user		}
 
-    
 };
 
 user * connected_users[MAX_CONNECTIONS];

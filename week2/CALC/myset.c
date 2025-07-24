@@ -1,15 +1,18 @@
+#define _GNU_SOURCE /*For strtok_r*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include "set.h"
 #include "myset.h"
-#define _GNU_SOURCE /*For strtok_r*/
-
+#define BUF_SIZE 256
+#define MAX_COMMAND_NAME_LENGTH 16
+#define MAX_SET_NAME_LENGTH 4
 #define COMMNAD_AMOUNT 7
 #define SETS_AMOUNT 6
 #define SUCCESS 1 
 #define FALIURE 0
+#define MAX_NUMBERS 128
 
 
 
@@ -92,11 +95,13 @@ void operation(int command_num, set ** varibles, int * numbers)
 
 int input(int * command_num, set * varibles[3], int numbers[128],char * path)
 {
-    char *line = NULL; /* Current line */
+    char line[BUF_SIZE] = {0}; /* Current line */
+    char tmp[BUF_SIZE]  = {0};
     char *next;        /* Next word in Current Line */
+    int offset = 0;
     *command_num = -1;
-    size_t n = 0;
     FILE * input_from;
+
     /*If file is given read from it , else read form console */
     if(path !=NULL){
         input_from = fopen(path,"r");
@@ -112,38 +117,39 @@ int input(int * command_num, set * varibles[3], int numbers[128],char * path)
 
     }
     /*While reading lines*/
-    while((int)getline(&line, &n, input_from) != -1){
-        next = (char*)malloc(n);
-        if(line != NULL && *line != '\n' && *line != '\0'){
-
+    printf("\n> ");
+    while(fgets(line, BUF_SIZE, input_from) != NULL)
+    {
+        offset = 0;
+        line[strcspn(line, "\n")] = 0;
+        if(*line != '\n' && *line != '\0')
+        {
             /*Print command if reading from file*/
             if(path!=NULL)
             {
                 printf("[COMMAND] %s",line);
             }
-            strncpy(next ,line,n);
             /* Check if at least one of the validation is worng */
-            if(    commandValidation(&next, command_num) 
-                && setValidation(&next,varibles,*command_num) 
-                && (!commands[*command_num].is_numbers || numberValidation(&next,numbers))
-                && commaValidation(&line))
+            if(    commandValidation(line, command_num,&offset) 
+                && setValidation(line,varibles,&offset,*command_num) 
+                && (!commands[*command_num].is_numbers || numberValidation(line,&offset,numbers))
+               // && commaValidation(tmp))
+            )
             {
-                operation(*command_num,varibles,numbers);
+                printf("YEY\n");
+               // operation(*command_num,varibles,numbers);
             }
-            else
-            {
-                continue;
-            }
+       
         }
-      
+        memset(line,0,BUF_SIZE);
+        printf("\n> ");
+
     }
     /*Close file if it was opened*/
     if(path!=NULL)
     {
         fclose(input_from);
     }
-    free(line);
-    free(next);
     
     return SUCCESS;
 
@@ -168,93 +174,100 @@ void printInstructions(void)
     }
     printf("\n");
     
-    
 }
 /**
  * @brief checks if command part of input is valid
  * @param line input string
  * @param command_num saves given command in here
+ * @param p_offset pointer to offset of a string to know from which part of the string next to validate
  * @return returns 1 if valid or 0 if invalid
  */
-int commandValidation(char ** line,int * command_num){
+int commandValidation(char * line,int * command_num, int * p_offset)
+{
+    int offset = *p_offset;
     * command_num = -1;
-    char * word = strtok_r(*line," ,\t\n",line);
-    int i = 0;
-    for (i = 0; i < COMMNAD_AMOUNT; i++)
+    int i;
+    int status = SUCCESS;
+    /*skip whitespaces */
+    while(line[offset] != '\0' && isspace(line[offset]))
     {
-        if (word!=NULL && strcmp(commands[i].name, word)== 0)
+        offset++;
+    }
+    
+    for (i = 0; i < COMMNAD_AMOUNT && *command_num == -1; i++)
+    {
+        if(strncmp(commands[i].name,line+offset,strnlen(commands[i].name,MAX_COMMAND_NAME_LENGTH)) == 0)
         {
+            
             *command_num = i;
-            break;
-        }
+            offset += strnlen(commands[i].name,MAX_COMMAND_NAME_LENGTH);
+        } 
     }
     if(*command_num == -1)
     {
         printf("[ERROR] Undifined command name\n");
-        return FALIURE;
+        status = FALIURE;
     }
-    return SUCCESS;
+    *p_offset = offset;
+    return status;
 
 }
 /**
  * @brief Check if set name is valid 
  * @param line input string
  * @param varibles  array of sets
+ * @param p_offset pointer to offset of a string to know from which part of the string next to validate
  * @param command_num  command number for knowing how many varibles to get
  */
-int setValidation(char ** line, set * varibles[3],int command_num)
+int setValidation(char * line, set * varibles[3],int * p_offset,int command_num)
 {
-    /*set validation*/
+    int offset = *p_offset;
+    int status = SUCCESS;
     unsigned int i,j = 0;
-    char * word = strtok_r(*line," ,\t\n",line);
+    /*skip whitspaces */
+    while(line[offset] != '\0' && isspace(line[offset]))
+    {
+        offset++;
+    }
+
 
     for (i = 0; i < commands[command_num].number_of_parameters; i++)
     {
         for (j = 0; j < SETS_AMOUNT; j++)
         {
-            if(word == NULL)
+            if(strncmp(sets[i].name,line+offset,strnlen(commands[i].name,MAX_COMMAND_NAME_LENGTH)) == 0)
             {
-                printf("[ERROR] missing paramter\n");
-                return FALIURE;
-            }
-
-            if (strcmp(word,sets[j].name) == 0)
-            {
-                varibles[i] = &sets[j].s;
-                break;
-            } 
+            varibles[i] = &sets[i].s;
+            offset += strnlen(sets[i].name,MAX_SET_NAME_LENGTH);
+            }    
               
         }
+
         if(varibles[i] == NULL)
         {
             printf("[ERROR] Undifined set name\n");
-            return FALIURE;
+            status = FALIURE;
         }      
-
-        if(i+1 != commands[command_num].number_of_parameters)
-        {
-            word = strtok_r(NULL," ,\t\n",line);
-        }
-        /*Check if input after end of program  (unless command expect numbers)*/
-        if(!commands[command_num].is_numbers)
-        {
-            if(*line!=NULL &&**line!='\n' && **line!='\0')
-            {
-                while(*line!=NULL ||**line!='\n')
-                {
-                    if(**line != ' ' || **line != '\t' )
-                    {
-                        printf("Extraneous text after end of command\n");
-                        return FALIURE;
-                    }
-                    *line++;
-                }
-            }
-        }
+        
         
     }
 
-    return SUCCESS;
+    /*Check if input after end of program  (unless command expects numbers)*/
+    if(commands[command_num].is_numbers == 0)
+    {
+        while(line[offset] != '\0' && status == SUCCESS)
+        {
+            if(isspace(line[offset]) == 0)
+            {
+                printf("[ERROR] Extraneous text after end of command\n");
+                status = FALIURE;
+
+            }
+        }
+          
+    }
+    *p_offset = offset;
+    return status;
 }
 /**
  * @brief  Checks if numbers in input are valid
@@ -262,47 +275,68 @@ int setValidation(char ** line, set * varibles[3],int command_num)
  * @param numbers output nunbers
  * @return  returns 1 if valid or 0 if invalid
  */
-int numberValidation(char ** line, int numbers[128])
+int numberValidation(char * line,int * p_offset, int numbers[128])
 {
-    int  number_count = 0;
-    char * word = strtok_r(*line," ,\t\n",line);
+    int number_count = 0;
+    const char *p = line;
     int num;
     int is_command_end = 0;
+    int offset = *p_offset;
+    while(line[offset] != '\0' && isspace(line[offset]))
+    {
+        offset++;
+    }
+    
 
 
     /*Numbers vaildiation*/
-    if(word == NULL)
+    if(line[offset] == '\0')
     {
         printf("[ERROR] missing paramter\n");
         return FALIURE;
     }
-    while(word!=NULL)
+    while (*p) 
     {
-        
-        if(*word != ' ' && *word!= '\t'  && isdigit(*word) == 0 && (*word != '-' && *(word+1) != '1') )
+        if (isdigit(*p) || (*p == '-' && isdigit(*(p + 1)))) 
+        {
+            char *end;
+            int num = strtol(p, &end, 10);
+            numbers[number_count++] = num;
+            p = end; 
+        } 
+        else if(!isspace(line[offset]) && isdigit(line[offset]), !line[offset] == ',')
         {
             printf("[ERROR] Invalid set member - not an integer \n");
             return FALIURE;
         }
+        else 
+        {
+            p++;
+        }
+    }
+
+
         
-        num = strtol(word,NULL,10);
+
+    
+        num = strtol(line+offset,line+offset,10);
         
         is_command_end = num == -1;
         if(is_command_end)
         {
-            if(*line!=NULL &&**line!='\n' && **line!='\0')
+            if(line!=NULL && line[offset]!='\n')
             {
-                while(*line!=NULL ||**line!='\n')
+                while(line!=NULL && line[offset]!='\n')
                 {
-                    if(**line != ' ' || **line != '\t' )
+                   if(line[offset] != ' ' && line[offset] != '\t')
                     {
                         printf("Extraneous text after end of command\n");
                         return FALIURE;
                     }
-                    *line++;
+                    line++;
                 }
             }
-        }
+        
         if(num < -1 || num > 127)
         {
             printf("[ERROR] Invalid set member - value out of range\n");
@@ -310,7 +344,7 @@ int numberValidation(char ** line, int numbers[128])
         }
         numbers[number_count++] = num;
         word = strtok_r(NULL," ,\t\n",line);
-
+ 
     }
     if(!is_command_end)
     {
@@ -327,14 +361,13 @@ int numberValidation(char ** line, int numbers[128])
  * @param line input string
  * @return  returns 1 if valid or 0 if invalid
  */
-int commaValidation(char ** line)
+int commaValidation(char * line)
 {
-    char * next = *line;
+    char * next = line;
     int var_count = 0;
     int comma_count = 0; 
     int comma_flag = 0; /*Flag for checking if the last character was a comma */
     /*Check if there is a comma before the command*/
-
     while(next != NULL && (*next == ' ' || *next == '\t' ||  *next == ','))
     {
         if(*next == ',')
@@ -396,6 +429,7 @@ int commaValidation(char ** line)
     return SUCCESS;
 
 }
+
 /**
  * @brief Exit program
  */
