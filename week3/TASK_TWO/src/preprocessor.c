@@ -145,33 +145,18 @@ boolean_e process_header(FILE *c2_file, char *header_path, char *father_path, lo
     {
         ENTRY * temp;
         snprintf(name_and_father, sizeof(name_and_father), "%s//%s", header_path, father_path);
+        printf("try %s\n", name_and_father);
 
         entry.key = strdup(name_and_father);
-        entry.data = (void *)depth;
-        hsearch(entry, ENTER); /*header_path//father_path */
 
-        temp = hsearch(entry, FIND);
-        if (!temp)
+        temp = hsearch(entry, FIND); /*header_path//father_path */
+
+        if(!temp)
         {
             entry.data = (void *)depth;
-            hsearch(entry, ENTER); /*header_path//father_path */
+            hsearch(entry,ENTER);
+            process_file(c2_file, header_file, header_path);
         }
-        else
-        {
-            snprintf(name_and_father, sizeof(name_and_father), "%s//%s", father_path, header_path);
-            entry.key = strdup(name_and_father);
-            temp = hsearch(entry, FIND);
-            if (temp)
-            {
-                printf("storm detected! %s from %s\n", header_path, father_path);
-                ret = TRUE;
-            }
-            else
-            {
-                process_file(c2_file, header_file, header_path);
-            }
-        }
-#if 0
         else if (temp->data != (void *)depth)
         {
             printf("storm detected!\n");
@@ -182,7 +167,7 @@ boolean_e process_header(FILE *c2_file, char *header_path, char *father_path, lo
             printf("depth %ld %s\n", depth, header_path);
             process_file(c2_file, header_file, header_path);
         }
-#endif
+
         fclose(header_file);
     }
 
