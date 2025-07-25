@@ -4,7 +4,14 @@
 
 #include "../headers/tree.h"
 
-
+/**
+ * @brief the function checks recursivly if there is a path between two nodes in a tree in the given direction, by going 'backwords' from bottom to top.
+ * 
+ * @param mat the adjacency matrix of the tree
+ * @param u the starting node
+ * @param v tne destination node
+ * @return boolean_e is there a path from u to v?
+ */
 boolean_e path(adjmat mat, int u, int v)
 {
     boolean_e ret ;
@@ -34,6 +41,13 @@ boolean_e path(adjmat mat, int u, int v)
     return ret;
 }
 
+/**
+ * @brief counts the amount of nodes that connect to the node u directly
+ * 
+ * @param mat the adjacency matrix of the tree
+ * @param u the node to count the fathers of
+ * @return int the number of fathers that u has
+ */
 int count_fathers(adjmat mat, int u)
 {
     int count = 0;
@@ -50,6 +64,13 @@ int count_fathers(adjmat mat, int u)
     return count;
 }
 
+/**
+ * @brief the function counts the number of direct paths that go from node u
+ * 
+ * @param mat the adjacency matrix of the tree
+ * @param u the node to count the children of
+ * @return int the number of children that u has
+ */
 int count_children(adjmat mat, int u)
 {
     int count = 0;
@@ -65,6 +86,12 @@ int count_children(adjmat mat, int u)
     return count;
 }
 
+/**
+ * @brief the function checks if the input is a valid tree.
+ * 
+ * @param mat the adjacency matrix of the tree
+ * @return boolean_e  whether the input is a valid tree or not.
+ */
 boolean_e check_input(adjmat mat)
 
 {
@@ -98,6 +125,11 @@ boolean_e check_input(adjmat mat)
     return ret;
 }
 
+/**
+ * @brief Get the adjacency matrix from the user.
+ * 
+ * @param mat the adjacency matrix to fill with user input
+ */
 void get_mat(adjmat  mat)
 {
     char ch;
@@ -134,6 +166,11 @@ void get_mat(adjmat  mat)
 
 }
 
+/**
+ * @brief Get a number from the user, which should be a non-negative integer, or -1 to exit.
+ * 
+ * @return int 
+ */
 int get_num(void)
 {
     boolean_e still_reading = TRUE;
@@ -184,6 +221,11 @@ int get_num(void)
     return num;
 }
 
+/**
+ * @brief the program gets an adjacency matrix from the user, checks if it is a valid tree, and then checks if there is a path between two nodes from the user until it ends with -1 -1.
+ * 
+ * @return int 
+ */
 int main()
 {
 
