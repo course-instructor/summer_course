@@ -2,8 +2,16 @@
 #define flag
 printf("b");
 
+
+
+
 <<< c.h
+
+
+
 <<< d.h
+
+
 >>> d.h
 
 >>> c.h
@@ -12,12 +20,23 @@ printf("b");
 
 printf("a");
 
+
+
+
 <<< d.h
+
+
 <<< b.h
 #define flag
 printf("b");
 
+
+
+
 <<< c.h
+
+
+
 >>> c.h
 
 >>> b.h
@@ -28,8 +47,16 @@ printf("b");
 #define flag
 printf("b");
 
+
+
+
 <<< c.h
+
+
+
 <<< d.h
+
+
 >>> d.h
 
 >>> c.h

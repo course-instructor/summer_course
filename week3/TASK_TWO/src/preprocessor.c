@@ -7,6 +7,13 @@
 
 #include <../headers/preprocessor.h>
 
+/**
+ * @brief check if the character is the start of a comment
+ *
+ * @param chr the last character read that we want to check (check for '/')
+ * @param file the file pointer that the second char will be red from (the '*' char)
+ * @return boolean_e
+ */
 boolean_e check_comment_start(char chr, FILE *file)
 {
     boolean_e ret = FALSE;
@@ -30,6 +37,13 @@ boolean_e check_comment_start(char chr, FILE *file)
     return ret;
 }
 
+/**
+ * @brief  check if the character is the end of a comment
+ *
+ * @param chr the last character read that we want to check (check for '*')
+ * @param file the file pointer that the second char will be red from (the '/' char)
+ * @return boolean_e
+ */
 boolean_e check_comment_end(char chr, FILE *file)
 {
     boolean_e ret = FALSE;
@@ -52,7 +66,14 @@ boolean_e check_comment_end(char chr, FILE *file)
     return ret;
 }
 
-void remove_comments(char *c_file_name)
+/**
+ * @brief reads the file and writes it without comments to a new file
+ *
+ * @param c_file_name the file to read from
+ *
+ * @return char* the name of the new file that was created with the comments removed
+ */
+char * remove_comments(char *c_file_name)
 {
     char *c1_file_name = malloc(strlen(c_file_name) + 1);
     FILE *c_file;
@@ -104,8 +125,15 @@ void remove_comments(char *c_file_name)
     }
     fclose(c_file);
     fclose(c1_file);
+    return c1_file_name;
 }
 
+/**
+ * @brief the function checks if the line is a header include line
+ *
+ * @param line the line to check
+ * @param ret the header path if exists, otherwise an empty string
+ */
 void find_header(char *line, char *ret)
 {
     char file_name[FILE_NAME_LENGTH];
@@ -128,9 +156,17 @@ void find_header(char *line, char *ret)
     ret[FILE_NAME_LENGTH - 1] = '\0';
 }
 
+/**
+ * @brief this function processes a header file, checking if adding it will cause a storm
+ *
+ * @param c2_file the file to write the contents of the header to
+ * @param header_path the path to the header file that we need to check and if needed copy to c2_file
+ */
 void process_header(FILE *c2_file, char *header_path)
 {
     ENTRY entry;
+
+    header_path = strdup(remove_comments(header_path));
     FILE *header_file = fopen(header_path, "r");
 
     entry.data = NULL;
@@ -187,10 +223,18 @@ void process_header(FILE *c2_file, char *header_path)
     }
 }
 
+/**
+ * @brief the function processes the input file line by line, checking for header includes
+ *
+ * @param c2_file file to write to
+ * @param input file to read from and if header proccess it otherwise write the line to c2_file
+ */
 void process_file(FILE *c2_file, FILE *input)
 {
     char line[LINE_LENGTH];
     char header_path[FILE_NAME_LENGTH];
+
+
 
     header_path[0] = '\0';
 
@@ -212,6 +256,11 @@ void process_file(FILE *c2_file, FILE *input)
     fflush(c2_file);
 }
 
+/**
+ * @brief the function creates a file, and will write the input file into it without any includes
+ *
+ * @param c1_file_name the file to read from
+ */
 void turn_c1_to_c2(char *c1_file_name)
 {
     char c2_path[LINE_LENGTH];
@@ -226,7 +275,10 @@ void turn_c1_to_c2(char *c1_file_name)
     {
         strcpy(c2_path, "c2");
 
+        c1_file_name = strdup(remove_comments(c1_file_name));
         c1_file = fopen(c1_file_name, "r");
+
+
         c2_file = fopen(c2_path, "w");
 
         if (!c1_file || !c2_file)
