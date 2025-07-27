@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "search.h": "c",
+        "stdio.h": "c",
+        "preprocessor.h": "c"
+    }
+}

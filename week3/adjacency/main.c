@@ -5,50 +5,54 @@
 #include "header/adjacency.h"
 #define MAX_INPUT 100
 
-/*false*/
-int main(void)
+int main()
 {
     adjmat tree;
     int v,u;
+    bool is_exit = false;
     print_instructions();
     get_metrix_form_input(&tree);
     printf("\n");
     adjmat_print(tree,N,N);
-    if(adjmat_validation(tree))
-    {
-        scanf("%*c"); 
 
-        while(1)
-        {
+    while(adjmat_validation(tree) == false)
+    {
+        printf("Inavlid metrix!\n");
+        get_metrix_form_input(&tree);
         printf("\n");
-        get_two_numbers(&v,&u);
-        if(path(tree,v,u) == TRUE)
+        adjmat_print(tree,N,N);
+    }
+
+    scanf("%*c"); 
+
+    while(is_exit == false)
+    {
+        printf("\n");
+        is_exit = get_two_numbers(&v,&u);
+        if(is_exit == false)
         {
-            printf("path exists!\n");
+            if(path(tree,v,u) == true)
+            {
+                printf("path exists!\n");
             
-        }
-        else
-        {
-            printf("path dont exists!\n");
-        }
+            }
+            else
+            {
+                printf("path dont exists!\n");
+            }
 
         }
         
     }
-    else
-    {
-        get_metrix_form_input(&tree);
-        printf("\n");
-        adjmat_print(tree,N,N);
 
-    }
+    
+    
+
 
 
     return 0;
 }
-/**
- * @brief prints welcome screen for user
- */
+
 void print_instructions(void)
 {
     printf("\n--- Tree Path Finder ---\n");
@@ -57,12 +61,9 @@ void print_instructions(void)
 }
 
 
-/**
- * @brief gets input from user of two numbers between 1 and N
- * @param v source node
- * @param u dest node
- */
-int get_two_numbers(int *v, int *u) {
+
+bool get_two_numbers(int *v, int *u) 
+{
     char input[MAX_INPUT];
     char *token1;
     char *token2;
@@ -71,15 +72,18 @@ int get_two_numbers(int *v, int *u) {
     char *end2;
     long val1;
     long val2;
-    int valid = 0;
+    bool is_valid = false;
+    bool is_exit = false;
 
-    while (!valid) {
+
+    while (is_valid == false) 
+    {
         printf("Enter two numbers (1-%d) or type \"exit\": ", N);
 
         if (fgets(input, sizeof(input), stdin) == NULL) 
         {
             fprintf(stderr, "Input error\n");
-            break;
+            continue;
         }
 
         /* remove trailing newline */
@@ -89,47 +93,48 @@ int get_two_numbers(int *v, int *u) {
         if (strcmp(input, "exit") == 0) 
         {
             printf("Exiting...\n");
-            exit(0);
+            is_exit = true;
+            break;
         }
+        else
+        {
 
-        token1 = strtok(input, " ");
-        token2 = strtok(NULL, " ");
-        extra  = strtok(NULL, " ");
+            token1 = strtok(input, " ");
+            token2 = strtok(NULL, " ");
+            extra  = strtok(NULL, " ");
 
-        if (token1 != NULL && token2 != NULL && extra == NULL) {
-            val1 = strtol(token1, &end1, 10);
-            val2 = strtol(token2, &end2, 10);
-
-            if (*end1 == '\0' && *end2 == '\0' &&
-                val1 > 0 && val1 <= N &&
-                val2 > 0 && val2 <= N &&
-                val1 != val2) 
+            if (token1 != NULL && token2 != NULL && extra == NULL) 
             {
-                *v = (int)val1 - 1;
-                *u = (int)val2 - 1;
-                valid = 1;
+                val1 = strtol(token1, &end1, 10);
+                val2 = strtol(token2, &end2, 10);
+
+                if (*end1 == '\0' && *end2 == '\0' &&
+                    val1 > 0 && val1 <= N &&
+                    val2 > 0 && val2 <= N &&
+                    val1 != val2) 
+                {
+                    *v = (int)val1 - 1; /*The rows and colums that the user is sees are from 1 to N while the metrix in fact is from 0 to N-1*/
+                    *u = (int)val2 - 1;
+                    is_valid = true;
+                } 
+                else 
+                {
+                    printf("Invalid numbers. Must be integers between 1 and %d, and not be equal.\n", N);
+                }
             } 
             else 
             {
-                printf("Invalid numbers. Must be integers between 1 and %d, and not be equal\n", N);
+                printf("Please enter exactly two numbers or type \"exit\"\n");
             }
-        } 
-        else 
-        {
-            printf("Please enter exactly two numbers or type \"exit\"\n");
         }
     }
+    return is_exit;
 
-    return valid;
 }
 
 
 
 
-/**
- * @brief get metrix from user input, user may enter any charcters , but only 1 or 0 would be taken into account
- * @param metrix pointer adjmat metrix
- */
 void get_metrix_form_input(adjmat * metrix)
 {
     char input;
@@ -139,29 +144,30 @@ void get_metrix_form_input(adjmat * metrix)
         printf("\n[line %d]\n",i+1);
         for (int j = 0; j < N; j++)
         {
-            input = fgetc(stdin);
             while(input != '0' && input != '1')
             {
-               
                 input = fgetc(stdin);
+                if(!isspace(input) && input != '0' && input != '1')
+                {
+                    printf("Inavlid input.\n");
+                }
             }
+            
+
             (*metrix)[i][j] = input - '0';   
             input = 0;  
         }
     }
 
 }
-/**
- * @brief checks if adjmat metrix is legal - if it has only one head and no more then one node pointing to another node
- * @param metrix adjmat metrix
- */
+
 bool adjmat_validation(adjmat matrix)
 {
-    bool is_valid = TRUE;
+    bool is_valid = true;
     int col,row;
     int zero_cols = 0;
 
-    bool is_col_zero = TRUE;
+    bool is_col_zero = true;
     int num_of_ones = 0;
 
     /*Check if there are at least a single 1 in a column */
@@ -171,23 +177,23 @@ bool adjmat_validation(adjmat matrix)
         {
             if (matrix[row][col] == 1)
             {
-                is_col_zero = FALSE;
+                is_col_zero = false;
                 num_of_ones++;
 
             }
             
         }
-        if(is_col_zero == TRUE)
+        if(is_col_zero == true)
         {
             zero_cols++;
         }
         if(num_of_ones > 1)
         {
-            is_valid = FALSE;
+            is_valid = false;
         
         }
         num_of_ones = 0;
-        is_col_zero = TRUE;
+        is_col_zero = true;
        
     }
     

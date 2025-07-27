@@ -2,11 +2,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -ansi -std=c99
 
 
-SRCS = preprocessor.c 
+SRCS = main.c src/preprocessor.c 
 OBJS = $(SRCS:.c=.o)
-DEPS = preprocessor.h
-
-ARGS = TEST/a.c
+DEPS = include/preprocessor.h
 
 
 TARGET = preprocessorProgram
