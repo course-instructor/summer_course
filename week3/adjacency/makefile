@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -g -ansi -std=c99
 
 SRCS = main.c src/adjacency.c
 OBJS = $(SRCS:.c=.o)
-DEPS = ./header/server.h
+DEPS = ./include/server.h
 
 
 TARGET = adjacencyProgram

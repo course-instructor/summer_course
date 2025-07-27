@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "header/adjacency.h"
+#include "include/adjacency.h"
 #define MAX_INPUT 100
 
 int main()

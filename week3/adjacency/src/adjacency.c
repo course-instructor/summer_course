@@ -1,4 +1,4 @@
-#include "../header/adjacency.h"
+#include "../include/adjacency.h"
 
 int path(adjmat tree, uint32_t v , uint32_t u)
 {
