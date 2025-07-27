@@ -1,0 +1,11 @@
+{
+    "makefile.makeDirectory": ".",
+    "makefile.makefilePath": "makefile",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/media/sf_summer_course/week2/SECOND_TASK",
+            "binaryPath": "/media/sf_summer_course/week2/SECOND_TASK/src/server/server",
+            "binaryArgs": []
+        }
+    ]
+}
