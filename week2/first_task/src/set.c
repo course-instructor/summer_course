@@ -6,11 +6,11 @@
 
 #include "set.h"
 
-
+#define PRINT_NEW_LINE 16
 
 void init_set(set_t * set_ptr)
 {
-    for(int i = 0; i < SET_SIZE; i++)
+    for(int i = 0; i < SET_ARRAY_COUNT; i++)
     {
         (*set_ptr)[i] = 0;
     }
@@ -23,52 +23,12 @@ void init_set(set_t * set_ptr)
  */
 void add_item_to_set(set_t set, int num)
 {
-    int index_in_sets = num / 32;
-    int bit_index = num % 32 ;
+    int index_in_sets = num / SET_ARRAY_LENGTH;
+    int bit_index = num % SET_ARRAY_LENGTH; ;
 
     set [index_in_sets] = (set [index_in_sets]) |  (1 << bit_index);
 }
 
-/**
-     * @brief the function reads from stdin a set of numbers seperated by ',' and appends them to the set  until it reaches -1 then it stops reading
-     * @param set the set that will be red from
-     * @param items a string with the items of the set seperated by ',' and white spaces
-*/
-void read_set(set_t set, const char *items)
-{
-    int current_num = 0;
-    int read_index;
-
-    for(read_index = 0; (read_index < strlen(items))  && (items[read_index] != '-1') && (items[read_index] != EOF); read_index++)
-    {
-        if(!isspace(items[read_index]))
-        {
-            if(items[read_index] == ',')
-            {
-                if(current_num < 128 && current_num > 0)
-                {
-                    add_item_to_set(set, current_num);
-                    current_num = 0;
-                }
-                else
-                {
-
-                }   
-            }
-
-            else if(isdigit(items[read_index]))
-            {
-                current_num *= 0;
-                current_num += items[read_index] - '0';
-            }
-            
-            else
-            {
-                //error
-            }
-        }
-    }
-}
 
 
 /**
@@ -83,15 +43,15 @@ void print_set(const set_t set)
     int number;
     int printed = 0;
     
-    for(arr_index = 0; arr_index < SET_SIZE; arr_index++)
+    for(arr_index = 0; arr_index < SET_ARRAY_COUNT; arr_index++)
     {
-        for(bit_index = 0; bit_index < 32; bit_index++)
+        for(bit_index = 0; bit_index < SET_ARRAY_LENGTH; bit_index++)
         {
             number = (set [arr_index] ) & (1 << (bit_index) );
             if(number)
             {
-                printf("%d ", arr_index * 32 + bit_index);
-                if(!(++ printed) % 16) //new line after every 16 numbers...
+                printf("%d ", arr_index * SET_ARRAY_LENGTH + bit_index);
+                if(!(++ printed) % PRINT_NEW_LINE) //new line after every 16 numbers...
                 {
                     printf("\n");
                 }
@@ -110,7 +70,7 @@ void print_set(const set_t set)
  */
 void union_set(set_t first, set_t second, set_t result)
 {
-    for (int i = 0; i < SET_SIZE; i++) 
+    for (int i = 0; i < SET_ARRAY_COUNT; i++) 
     {
         (result)[i] = (first)[i] | (second)[i];
     }
@@ -126,7 +86,7 @@ void union_set(set_t first, set_t second, set_t result)
 
 void intersect_set( set_t first, set_t second, set_t result)
 {
-    for (int i = 0; i < SET_SIZE; i++) 
+    for (int i = 0; i < SET_ARRAY_COUNT; i++) 
     {
         result[i] = first[i] & second[i];
     }
@@ -140,7 +100,7 @@ void intersect_set( set_t first, set_t second, set_t result)
  */
 void sub_set( set_t first,  set_t second, set_t result)
 {
-    for (int i = 0; i < SET_SIZE; i++) 
+    for (int i = 0; i < SET_ARRAY_COUNT; i++) 
     {
         result[i] = (first[i] & ( ~ second[i]));
     }
@@ -154,7 +114,7 @@ void sub_set( set_t first,  set_t second, set_t result)
  */
 void symdiff_set( set_t first, set_t second, set_t result)
 {
-    for (int i = 0; i < SET_SIZE; i++) 
+    for (int i = 0; i < SET_ARRAY_COUNT; i++) 
     {
         result[i] = (first[i] & ( ~ second[i])) | (second[i] & ( ~ first[i]));
     }

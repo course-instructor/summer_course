@@ -5,22 +5,31 @@
 
 #include "set.h"
 
-enum e_errors 
+#define G_SETS_COUNT 6
+#define SET_NAME_LENGTH 5
+
+enum set_error_e 
 {
     SET_NAME, COMMAND_NAME,
     MEMBER_RANGE, MEMBER_TYPE,
-    TEXT_AFTER_END, MISSING_PARAM,
-    MULTIPLE_COMMAS, NO_COMMA, ILLIGALL_COMMA, NO_TERMINATION
+    TEXT_AFTER_END, NO_TERMINATION,
+    MISSING_PARAM,
+    MULTIPLE_COMMAS, NO_COMMA, ILLIGALL_COMMA,
 };
 
-enum e_ended_with
+enum end_char_e
 {
     NOT_ENDED, ERROR, COMMA, END_LINE, MISSING_COMMA,
 };
 
-set_t g_sets [6] = {0};
+typedef enum 
+{
+    FALSE, TRUE,
+}bool_e;
 
-char g_set_names [6][5] = 
+set_t g_sets [G_SETS_COUNT] = {0};
+
+char g_set_names [G_SETS_COUNT][SET_NAME_LENGTH] = 
 {
     "SETA",
     "SETB",
@@ -40,7 +49,7 @@ int get_three_sets(set_t ** inp_sets_arr_pointer, int * char_index_pointer, char
  * 
  * @param e the error enum that gets its messege
  */
-void error(enum e_errors e)
+void error(enum set_error_e e)
 {
     const char *errors[] = {
         "Undefined set name",
@@ -189,7 +198,7 @@ enum e_ended_with get_set(int * char_index_pointer, char * line, set_t * * set_p
 
     else if(end_status == END_LINE || end_status == COMMA  )
     {
-        for(int i = 0; i < 6 && set_index == -1; i++)
+        for(int i = 0; i < G_SETS_COUNT && set_index == -1; i++)
         {
             if(0 == (strncmp(g_set_names[i], &line[start_index] , 4  )))
             {
@@ -410,7 +419,7 @@ void get_set_members(int * char_index_pointer, char * line, set_t * set_ptr)
     {
         
 
-        for (int i = 0; i < SET_SIZE; i++)//change the original set to the temp
+        for (int i = 0; i < SET_ARRAY_COUNT; i++)//change the original set to the temp
         {
 
             
@@ -427,7 +436,7 @@ void get_set_members(int * char_index_pointer, char * line, set_t * set_ptr)
  */
 void init_all_sets(void)
 {
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < G_SETS_COUNT; i++)
     {
         init_set(& g_sets[i]);
     }
@@ -456,105 +465,104 @@ void set_main()
     while (!exit_flag)
     {
         int char_index = 0;
-        int err_flag = 0;
-        int param_index = 0;
+        bool_e line_error_found = FALSE;
+        int param_index = 0;    
+        int line_length =  0;
+
 
 
         line = get_line();
         if(!line) //alocation failed...
         {
-            err_flag = 1;
+            line_error_found = TRUE;
         }
 
-        for( ; char_index < strlen(line) && !err_flag && ! isspace(line[char_index]); char_index++)
+        line_length = strlen(line);
+
+        for( ; char_index < line_length && !line_error_found && ! isspace(line[char_index]); char_index++)
         {
             if(line[char_index] == ',')
             {
                 error(ILLIGALL_COMMA);
-                err_flag = 1;
+                line_error_found = TRUE;
             }
         }
 
-        if(!err_flag)
+        if(!line_error_found)
         {
-            char * action = malloc(char_index + 1);
+            char * action = malloc(line_length + 1);
             strncpy(action,line, char_index );
             action[char_index] = '\0';
 
             skip_spaces(&char_index, line);
             if(line[char_index] == ',')
             {
-                err_flag = 1;
+                line_error_found = TRUE;
                 error(ILLIGALL_COMMA);
             }
 
-            if(strncmp(action, "read_set", char_index) == 0 && !err_flag) 
+            if(strncmp(action, "read_set", char_index) == 0 && !line_error_found) 
             {
-
-
                 if(line[char_index] == ',')
                 {
-                    err_flag = 1;
+                    line_error_found = TRUE;
                     error(ILLIGALL_COMMA);
                 }
                 else
                 {
-
-                
-
                     int start_index = char_index;
                     set_t * set_ptr = NULL;
                     enum e_ended_with end_status = get_set(&char_index, line, & set_ptr);
                     
                     if(end_status == ERROR)
                     {
-                        err_flag = 1;
+                        line_error_found = TRUE;
                     }
 
                     else if(end_status  == END_LINE ) // if ended not with comma then there werent memeber parameters...
                     {
-                        err_flag = 1;
+                        line_error_found = TRUE;
                         error(MISSING_PARAM);
                     }
 
-                    else if(!err_flag)
+                    else if(!line_error_found)
                     {
                         get_set_members(&char_index, line, set_ptr);
                     }
                 }
             }
             
-            else if(0 == (strncmp(action, "print_set",char_index)) && !err_flag)
+            else if(0 == (strncmp(action, "print_set",char_index)) && !line_error_found)
             {
                 set_t * set_ptr;
                 enum e_ended_with end_status = get_set(&char_index, line, & set_ptr);
                 
                 if (end_status == ERROR)
                 {
-                    err_flag = 1;
+                    line_error_found = TRUE;
                 }
 
                 else if(end_status == COMMA) // if ended with comma...
                 {
-                    err_flag = 1;
+                    line_error_found = TRUE;
                     error(ILLIGALL_COMMA);
                 }
 
                 else if(end_status == MISSING_COMMA )
                 {
-                    err_flag = 1;
+                    line_error_found = TRUE;
                     error(TEXT_AFTER_END);
                 }
                 
-                else if(end_status == END_LINE && !err_flag ) //if no error and only one set
+                else if(end_status == END_LINE && !line_error_found ) //if no error and only one set
                 {
                     int not_empty_flag = 0;
 
-                    for(int i = 0; i < SET_SIZE; i ++) //check if the set is empty...
+                    for(int i = 0; i < SET_ARRAY_COUNT; i ++) //check if the set is empty...
                     {
                         if(*(set_ptr)[i] != 0) //atleast one part to not be empty...
                         {
-                            not_empty_flag = 1;
+                            not_empty_flag = TRUE;
                         }
                     }
 
@@ -569,54 +577,54 @@ void set_main()
                 }
                 
             }
-            else if(0 == (strncmp(action, "union_set",  char_index)) && !err_flag)
+            else if(0 == (strncmp(action, "union_set",  char_index)) && !line_error_found)
             {
                 set_t * inp_sets [3] ;
 
-                err_flag = get_three_sets( inp_sets, &char_index, line);
-                if(!err_flag)
+                line_error_found = get_three_sets( inp_sets, &char_index, line);
+                if(!line_error_found)
                 {
 
                     union_set(inp_sets[0], inp_sets[1], inp_sets[2]);
                 }
             }
-            else if(0 == (strncmp(action, "intersect_set", char_index)) && !err_flag)
+            else if(0 == (strncmp(action, "intersect_set", char_index)) && !line_error_found)
             {
                 set_t * inp_sets [3];
 
-                err_flag = get_three_sets( inp_sets, &char_index, line);
-                if(!err_flag)
+                line_error_found = get_three_sets( inp_sets, &char_index, line);
+                if(!line_error_found)
                 {
                     intersect_set(*inp_sets[0], *inp_sets[1], *inp_sets[2]);
                 }
             }
-            else if(0 == (strncmp(action,  "sub_set", char_index)) && !err_flag)
+            else if(0 == (strncmp(action,  "sub_set", char_index)) && !line_error_found)
             {
                 set_t * inp_sets [3];
 
-                err_flag = get_three_sets( inp_sets, &char_index, line);
-                if(!err_flag)
+                line_error_found = get_three_sets( inp_sets, &char_index, line);
+                if(!line_error_found)
                 {
                     sub_set(*inp_sets[0], *inp_sets[1], *inp_sets[2]);
                 }                
             }
-            else if(0 == (strncmp(action,  "symdiff_set", char_index)) && !err_flag)
+            else if(0 == (strncmp(action,  "symdiff_set", char_index)) && !line_error_found)
             {
                 
                 set_t * inp_sets [3];
 
-                err_flag = get_three_sets( inp_sets, &char_index, line);
-                if(!err_flag)
+                line_error_found = get_three_sets( inp_sets, &char_index, line);
+                if(!line_error_found)
                 {
                     symdiff_set(*inp_sets[0], *inp_sets[1], *inp_sets[2]);
                 }
             }
-            else if(0 == (strncmp(action, "stop", char_index)) && !err_flag)
+            else if(0 == (strncmp(action, "stop", char_index)) && !line_error_found)
             {
                 skip_spaces(& char_index,line);
                 if(line[char_index] != '\0' && line[char_index] != '\n')
                 {
-                    err_flag = 1;
+                    line_error_found = TRUE;
                     error(TEXT_AFTER_END);
                 }
                 else
@@ -626,10 +634,10 @@ void set_main()
                 }
             }
 
-            else if(!err_flag)
+            else if(!line_error_found)
             {
                 //uncknown action
-                err_flag = 1;
+                line_error_found = TRUE;
                 error(COMMAND_NAME);
             }
 

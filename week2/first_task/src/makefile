@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -g
+CFLAGS = -Wall -Wextra -ansi -pedantic -std=c99 -g
 
 # Source files (replace these with your actual filenames)
 SRCS = myset.c set.c
