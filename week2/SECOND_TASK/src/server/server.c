@@ -74,7 +74,7 @@ void * get_input(void *)
     return NULL;
 }
 
-int main(void)
+void server_listen_to_connections(void)
 {
     int sockfd, new_fd, rv, yes = 1;
     struct addrinfo hints, *servinfo, *p;
@@ -160,5 +160,11 @@ int main(void)
             pthread_mutex_unlock(&clients_mutex);
         }
     }
+
+}
+
+int main(void)
+{
+    server_listen_to_connections();
     return 0;
 }

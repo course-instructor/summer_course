@@ -120,6 +120,49 @@ int check_action_permission(enum request_e request)
     return ret;
 }
 
+void get_message_number_from_input(void)
+{
+    number = -1;
+    sscanf(text,"%d",&number);
+    if(check_action_permission(number)) //check inapropriate protocol
+    {
+        
+        
+
+        char name [MESSAGE_LENGTH] ;
+        char password [MESSAGE_LENGTH] ;
+
+        name[0] = '\0';
+        password[0] = '\0';
+
+
+        switch (number)
+        {
+            case SIGN_UP:
+
+                get_name_and_pass(name,password);
+                send_signup_message(sockfd,name,password);
+                break;
+
+            case LOG_IN:
+
+                get_name_and_pass(name,password);
+                send_login_message(sockfd,name,password);
+                break;
+            case LIST_OF_ROOMS:
+                send_room_lst_message(sockfd);
+                break;
+
+            case ENTER_ROOM:
+                int room;
+                get_name_and_room( name, &room);
+                send_enter_room_message(sockfd,name, room);
+            default:
+                break;
+        }
+    }
+}
+
 /**
  * @brief Get stdin input from the client and call ccorrect handler
  * 
@@ -168,7 +211,6 @@ void * get_input(void * arg)
                 *line_end = '\0';
             }
 
-
             if(strcmp(text,"~") == 0) //disconnect
             {
                 send_leave_room_message(sockfd,name);
@@ -182,51 +224,9 @@ void * get_input(void * arg)
 
         else
         {
-
-            number = -1;
-            sscanf(text,"%d",&number);
-            if(!check_action_permission(number)) //inapropriate protocol
-            {
-                continue;
-            }
-
-            char name [MESSAGE_LENGTH] ;
-            char password [MESSAGE_LENGTH] ;
-
-            name[0] = '\0';
-            password[0] = '\0';
-
-
-            switch (number)
-            {
-                case SIGN_UP:
-
-                    get_name_and_pass(name,password);
-                    send_signup_message(sockfd,name,password);
-                    break;
-
-                case LOG_IN:
-
-                    get_name_and_pass(name,password);
-                    send_login_message(sockfd,name,password);
-                    break;
-                case LIST_OF_ROOMS:
-                    send_room_lst_message(sockfd);
-                    break;
-
-                case ENTER_ROOM:
-                    int room;
-                    get_name_and_room( name, &room);
-                    send_enter_room_message(sockfd,name, room);
-                default:
-                    break;
-            }
-
+            get_message_number_from_input();
         }
-
-
     }
-
     return NULL;
 }
 
@@ -239,7 +239,7 @@ void * get_input(void * arg)
 void * handle_connection (void* arg)
 {
     int sockfd = *((int *) arg);
-    client_ptr_t server = malloc(sizeof(client_s));
+    client_ptr_t server = malloc(sizeof(client_t));
     server->sockfd = sockfd;
 
     while(get_message(server));

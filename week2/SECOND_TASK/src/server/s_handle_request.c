@@ -30,7 +30,7 @@ message_s * handle_signup(const char * buf)
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
     response_message->message_num.res = SIGN_UP_RESPONSE;
-    response_message->code_tag = 1; //res
+    response_message->is_response_msg = 1; //res
 
 
     if(success)
@@ -53,7 +53,7 @@ message_s * handle_signup(const char * buf)
  * @param client client that wants to log in (his status will be changed if he loges in successfully)
  * @return message_s* the responce message "-1" fail, "0" success
  */
-message_s * handle_login(const char * buf, client_s * client)
+message_s * handle_login(const char * buf, client_t * client)
 {
     int reading_index = 0;
 
@@ -68,7 +68,7 @@ message_s * handle_login(const char * buf, client_s * client)
 
     message_s * response_message = (message_s *)malloc(sizeof (struct message_s));
     response_message->message_num.res = LOG_IN_RESPONSE;
-    response_message->code_tag = 1; //res
+    response_message->is_response_msg = 1; //res
 
     if(success)
     {
@@ -91,11 +91,11 @@ message_s * handle_login(const char * buf, client_s * client)
  * @param client client that wants to enter room
  * @return message_s* the responce message "-1" fail, "0" success
  */
-message_s * handle_enter_room(const char * buf, client_s * client)
+message_s * handle_enter_room(const char * buf, client_t * client)
 {
     message_s * message = malloc(sizeof(message_s));
     message->message_num.res = ENTER_ROOM_RESPONSE;
-    message->code_tag = 1; //res
+    message->is_response_msg = 1; //res
 
     int reading_index = 0;
 
@@ -145,11 +145,11 @@ message_s * handle_enter_room(const char * buf, client_s * client)
  * @param client client that wants to leave room
  * @return message_s*  the responce message "-1" fail, "0" success
  */
-message_s * handle_exit_room(const char * buf,client_s * client)
+message_s * handle_exit_room(const char * buf,client_t * client)
 {
     message_s * message = malloc(sizeof(message_s));
     message->message_num.res = EXIT_ROOM_RESPONSE;
-    message->code_tag = 1;//res
+    message->is_response_msg = 1;//res
 
     int reading_index = 0;
 
@@ -179,7 +179,7 @@ message_s * handle_exit_room(const char * buf,client_s * client)
  * @param client client that wants to seend to room a message
  * @return message_s* NULL
  */
-message_s * handle_send_to_room(const char *buf, client_s * client)
+message_s * handle_send_to_room(const char *buf, client_t * client)
 {
 
 
@@ -207,7 +207,7 @@ message_s * handle_send_to_room(const char *buf, client_s * client)
  */
 message_s * handle_message(int num, const char * buf, void * ptr)
 {
-    client_s * client = (client_s *) ptr;
+    client_t * client = (client_t *) ptr;
     message_s * response_message = NULL;
 
     switch (num)
@@ -328,14 +328,14 @@ int process_login(const char *name, const char *password)
  * @param client client that wants to get the list of rooms
  * @return message_s* list of rooms or {-1} if unssuccessfull
  */
-message_s * handle_room_lst_message(client_s * client)
+message_s * handle_room_lst_message(client_t * client)
 {
     message_s * message = NULL;
     if((client -> status) == CONNECTED)
     {
         message = malloc(sizeof(message_s));
         message->message_num.res = LIST_OF_ROOMS_RESPONSE;
-        message->code_tag = 1;//res
+        message->is_response_msg = 1;//res
 
         message->params = malloc((ROOM_COUNT + 1) * sizeof(char *)); //room names + NULL terminator
 
@@ -375,7 +375,7 @@ int process_enter_room(client_ptr_t client,int room_num)
  * @param client client that wants to leave the room
  * @return int did the client leave the room
  */
-int proccess_exit_room(client_s * client)
+int proccess_exit_room(client_t * client)
 {
     int enter_room_error = 0;
     if((client -> status) == IN_ROOM)

@@ -17,7 +17,7 @@ int send_message(int sockfd, const message_s *message)
 {
     char payload[MESSAGE_LENGTH];
 
-    int number = (message->code_tag)?(message->message_num.res):(message->message_num.req);
+    int number = (message->is_response_msg)?(message->message_num.res):(message->message_num.req);
 
     int  pos = snprintf(payload, sizeof payload, "%d%c",number ,SEPERATING_CHAR);
 
@@ -47,13 +47,13 @@ int get_message(client_ptr_t client)
     char buf[MESSAGE_LENGTH];
     char * buf_ptr = buf;
 
-    int is_connected = 1;
+    bool_e is_connected = TRUE;
 
 
     numbytes = recv(sockfd, buf, MESSAGE_LENGTH, 0);
     if (numbytes <= 0)
     {
-        is_connected = 0;
+        is_connected = FALSE;
     }
     else
     {

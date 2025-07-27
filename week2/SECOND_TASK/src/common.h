@@ -6,17 +6,24 @@
 #include <stddef.h> // NULL
 
 #define MESSAGE_LENGTH 256 //max length of the message
+#define PORT "3490" 
+
+typedef enum
+{
+    FALSE,
+    TRUE
+}bool_e
 
 /// @brief the connection access status of the client
-enum connection_e
+typedef enum connection_e
 {
   NOT_CONNECTED,
   CONNECTED,
   IN_ROOM
-};
+}connection_e;
 
 /// @brief request codes that the user sends to the server
-enum request_e
+typedef enum request_e
 {
     SIGN_UP       = 100,
     LOG_IN,
@@ -26,8 +33,8 @@ enum request_e
     EXIT_ROOM,
 
 
-};
-enum responce_e
+}request_e;
+typedef enum responce_e
 {
     SIGN_UP_RESPONSE       = 200,
     LOG_IN_RESPONSE,
@@ -38,7 +45,7 @@ enum responce_e
     EXIT_ROOM_RESPONSE     = 211,
 
     WAITING = 0
-};
+}responce_e;
 
 typedef union
 {
@@ -51,18 +58,18 @@ typedef union
 typedef struct message_s
 {
     message_code_u message_num; //request number of the message(what tipe of message)
-    int code_tag; //0 for req, 1 for res
+    int is_response_msg; //0 for req, 1 for res
     const char **params; // a NULL terminated array of params to be passed
 } message_s;
 
 /// @brief client struct that is used to store different info about the client
-typedef struct client_s
+typedef struct client_t
 {
     int sockfd; // the clients socket
     enum connection_e status; // the connections status ( what the client is allowed to do)
     struct sockaddr_storage addr; //sock address
     int room_index; //room_index
-} client_s, *client_ptr_t;
+} client_t, *client_ptr_t;
 
 
 

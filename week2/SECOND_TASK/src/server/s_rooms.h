@@ -8,7 +8,7 @@
 
 #define ROOM_COUNT 5 //how many rooms there are in g_rooms
 
-
+#define NAME_LENGTH 20
 
 /// @brief clients linked list
 typedef struct clients_node
@@ -22,7 +22,7 @@ typedef struct room_s
 {
     client_list_t clients; //linked list of clients in the room
     pthread_mutex_t mutex; //room mutex to prevent race conditions when clients operate with the room
-    char name [20]; //the rooms name that will be sent on a request of the list of rooms
+    char name [NAME_LENGTH]; //the rooms name that will be sent on a request of the list of rooms
 } room_s;
 
 
