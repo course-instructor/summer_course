@@ -75,6 +75,8 @@ void my_sniffer_print_ethernet_addr(unsigned char address_arr [ETH_ALEN], FILE *
 
 void my_sniffer_print_ethernet(unsigned char * buffer, FILE * log_f)
 {
+    my_sniffer_print_header_line(buffer, log_f);
+
     struct ethhdr *ethernet_header = (struct ethhdr *)(buffer);
 
     fprintf(log_f, "Ethernet Header\n");
@@ -93,12 +95,34 @@ void my_sniffer_print_ethernet(unsigned char * buffer, FILE * log_f)
     my_sniffer_print_ip(buffer, message, log_f);
 }
 
+void my_sniffer_print_header_line(unsigned char * buffer, FILE * log_f)
+{
+    /* skipping the ethernet header to get the type of message */
+    buffer += sizeof(struct ethhdr);
+    struct iphdr *ip_header = (struct iphdr *)(buffer );
+    const char * header_str;
+    switch (ip_header->protocol)
+    {
+    case IP_TCP:
+        header_str = MESSAGE_TYPE_TO_STR[TCP];
+        break;
+    case IP_UDP:
+        header_str = MESSAGE_TYPE_TO_STR[UDP];
+        break;
+    case IP_ICMP:
+        header_str = MESSAGE_TYPE_TO_STR[ICMP];
+        break;
+    default:
+        header_str = "UNKNOWN";
+        break;
+    }
+
+    fprintf(log_f, "***********************%s***********************\n", header_str);
+}
+
 void my_sniffer_print_ip(unsigned char * buffer, message_s message, FILE * log_f)
 {
     struct iphdr *ip_header = (struct iphdr *)(buffer );
-
-
-
 
     fprintf(log_f, "IP Header\n");
     fprintf(log_f, "\t|-Version           : %d\n", (unsigned int)ip_header->version);
@@ -132,6 +156,7 @@ void my_sniffer_print_ip(unsigned char * buffer, message_s message, FILE * log_f
             break;
         case IP_ICMP:
             message.message_type = ICMP;
+            my_sniffer_print_icmp(buffer, message, log_f);
             break;
 
         default:
@@ -196,6 +221,46 @@ void my_sniffer_print_udp(unsigned char * buffer, message_s message, FILE * log_
     my_sniffer_print_message(message);
 
     message.data_length -= sizeof(struct udphdr);
+    my_sniffer_print_data(buffer, message.data_length, log_f);
+}
+
+void my_sniffer_print_icmp(unsigned char * buffer, message_s message, FILE * log_f)
+{
+    struct icmphdr *icmp_header = (struct icmphdr *)(buffer);
+
+    fprintf(log_f, "ICMP Header\n");
+    fprintf(log_f, "\t|-Type                  : %d\n", (unsigned int)icmp_header->type);
+    fprintf(log_f, "\t|-Code                  : %d\n", (unsigned int)icmp_header->code);
+    fprintf(log_f, "\t|-Checksum              : %d\n", ntohs(icmp_header->checksum));
+
+    switch (icmp_header->type)
+    {
+        case ICMP_ECHOREPLY:
+        case ICMP_ECHO:
+            fprintf(log_f, "\t\t|-ID                    : %d\n", ntohs(icmp_header->un.echo.id));
+            fprintf(log_f, "\t\t|-Sequence              : %d\n", ntohs(icmp_header->un.echo.sequence));
+            break;
+
+        case ICMP_DEST_UNREACH:
+            if(icmp_header->code == ICMP_FRAG_NEEDED)
+            {
+                fprintf(log_f, "\t\t|-MTU                  : %d\n", ntohs(icmp_header->un.frag.mtu));
+            }
+            break;
+
+        case ICMP_REDIRECT:
+            fprintf(log_f, "\t\t|-Gateway Address       : %s\n", inet_ntoa(*(struct in_addr *)&icmp_header->un.gateway));
+            break;
+
+    }
+
+    fprintf(log_f, "\n");
+
+    my_sniffer_print_message(message);
+
+    message.data_length -= sizeof(struct icmphdr);
+    buffer += sizeof(struct icmphdr);
+
     my_sniffer_print_data(buffer, message.data_length, log_f);
 }
 
