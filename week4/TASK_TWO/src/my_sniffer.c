@@ -1,7 +1,7 @@
 #include "my_sniffer.h"
 
 
-_Atomic bool_e g_listen_to_socket = TRUE;
+_Atomic bool_e g_listen_to_socket = FALSE;
 _Atomic int g_message_id ;
 _Atomic bool_e g_end = FALSE;
 
@@ -22,21 +22,21 @@ bool_e my_sniffer_create_socket(void)
     else
     {
         FILE * log_file = fopen(LOG_FILE,"w");
-        FILE * log_index_file = fopen(LOG_MESSAGE_INDEX_FILE, "w");
-        if(log_file == NULL || log_index_file == NULL)
+        FILE * log_index_f = fopen(LOG_MESSAGE_INDEX_FILE, "w");
+        if(log_file == NULL || log_index_f == NULL)
         {
             perror("my_sniffer_create_socket opening log files\n");
             ret = FALSE;
         }
         else
         {
-            while(g_listen_to_socket && g_end == FALSE)
+            while(g_listen_to_socket )
             {
-                my_sniffer_listn_socket(sock_r, log_file, log_index_file);
+                my_sniffer_listn_socket(sock_r, log_file, log_index_f);
             }
 
             fclose(log_file);
-            fclose(log_index_file);
+            fclose(log_index_f);
         }
 
     }
@@ -62,9 +62,9 @@ bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f, FILE * log_index_f)
     else
     {
         /* write the starting index of the file to the index log file to find the message later */
-        int start_index = fseek(log_f, 0, SEEK_END);
-        fprintf(index_log_f, "%d\n", start_index);
-        fclose(index_log_f);
+        fseek(log_f, 0, SEEK_END);
+        int start_index = ftell(log_f);
+        fprintf(log_index_f, "%d\n", start_index);
 
         my_sniffer_print_ethernet(buffer, log_f);
     }
@@ -100,15 +100,16 @@ void my_sniffer_print_packet(int message_id)
         if(offset != ERROR)
         {
             fseek(log_f, offset, SEEK_SET);
-            char buffer[PACKET_SIZE] = {0};
+            char buffer[PACKET_SIZE] = {'\0'};
+
             do
             {
-                fgets(buffer, PACKET_SIZE, log_f);
-                if(buffer)
+                if (fgets(buffer, PACKET_SIZE, log_f) == NULL)
                 {
-                    printf("%s", buffer);
+                    break;
                 }
-            } while (buffer && (strcmp(buffer, MESSAGE_END_LINE) != 0));
+                printf("%s", buffer);
+            } while (!strstr(buffer,MESSAGE_END_LINE));
         }
         else
         {
@@ -364,6 +365,7 @@ void* my_sniffer_listen_for_input_thread(void *)
     /* Restore terminal settings */
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
+    return NULL;
 }
 
 void my_sniffer_handle_input(key_input_e * state_ptr)
@@ -408,6 +410,7 @@ void my_sniffer_handle_input(key_input_e * state_ptr)
                     }
                     id *= 10;
                     id += key_input - '0';
+                    printf("%d\n", id);
                 }
                 else if (key_input == ESCAPE)
                 {
@@ -426,6 +429,7 @@ void my_sniffer_handle_input(key_input_e * state_ptr)
             key_input = getchar();
             if(key_input == START)
             {
+                * state_ptr = START;
                 g_listen_to_socket = TRUE;
             }
             break;
@@ -440,18 +444,13 @@ void* my_sniffer_sniffer_thread(void *)
 {
     bool_e exit = FALSE;
 
-    while(g_end == FALSE)
+    while(g_end == FALSE && exit == FALSE)
     {
         if(g_listen_to_socket == TRUE && exit == FALSE)
         {
             exit = my_sniffer_create_socket();
         }
-        else if(exit == TRUE)
-        {
-            g_end = TRUE;
-            g_listen_to_socket = FALSE;
-            printf("Sniffer stopped.\n");
-        }
+
     }
     return NULL;
 }

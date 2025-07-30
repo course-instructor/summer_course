@@ -74,7 +74,7 @@ typedef struct
 
 
 bool_e my_sniffer_create_socket(void);
-bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f);
+bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f, FILE * log_index_f);
 int my_sniffer_get_message_offset(FILE * log_index_f, int message_id);
 void my_sniffer_print_packet(int message_id);
 void my_sniffer_print_ethernet_addr(unsigned char address_arr [ETH_ALEN], FILE * log_f);
