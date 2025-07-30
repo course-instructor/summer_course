@@ -75,11 +75,12 @@ int my_sniffer_get_message_offset(FILE * log_index_f, int message_id)
 {
     int counter = 0;
     int offset = ERROR;
-    while(!feof(log_index_f) && (offset == ERROR))
+    while(!feof(log_index_f) )
     {
+        fscanf(log_index_f, "%d", &offset);
         if(counter == message_id)
         {
-            fscanf(log_index_f, "%d", &offset);
+            break;
         }
         counter++;
     }
@@ -97,6 +98,7 @@ void my_sniffer_print_packet(int message_id)
     else
     {
         int offset = my_sniffer_get_message_offset(log_index_f, message_id);
+        printf("offset: %d\n", offset);
         if(offset != ERROR)
         {
             fseek(log_f, offset, SEEK_SET);
