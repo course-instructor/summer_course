@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "if_ether.h": "c",
+        "my_sniffer.h": "c",
+        "packet.h": "c",
+        "time.h": "c"
+    }
+}
