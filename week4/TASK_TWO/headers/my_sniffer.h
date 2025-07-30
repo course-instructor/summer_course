@@ -16,6 +16,10 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 
+#include <termios.h>
+#include <unistd.h>
+#include <pthread.h>
+
 
 #define PACKET_SIZE 65536 /* 2^16 (lenght is 2 bytes) */
 #define DWORD_SIZE 4 /* 1 DWORD = 4 Bytes */
@@ -30,6 +34,8 @@
 #define IP_UDP 17
 #define IP_ICMP 1
 
+#define ERROR -1
+
 const char *  MESSAGE_TYPE_TO_STR [3] = {"TCP", "UDP", "ICMP"};
 
 typedef enum
@@ -41,6 +47,14 @@ typedef enum
 {
     TCP, UDP, ICMP
 } message_type_e;
+
+typedef enum
+{
+    START = 's',
+    STOP = 'k',
+    INSPECT = 'i',
+    ESCAPE = 27, /* Escape key */
+}key_input_e;
 
 
 
@@ -61,6 +75,8 @@ typedef struct
 
 bool_e my_sniffer_create_socket(void);
 bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f);
+int my_sniffer_get_message_offset(FILE * log_index_f, int message_id);
+void my_sniffer_print_packet(int message_id);
 void my_sniffer_print_ethernet_addr(unsigned char address_arr [ETH_ALEN], FILE * log_f);
 void my_sniffer_print_ethernet(unsigned char * buffer, FILE * log_f);
 void my_sniffer_print_header_line(unsigned char * buffer, FILE * log_f);
@@ -70,5 +86,7 @@ void my_sniffer_print_udp(unsigned char * buffer, message_s message, FILE * log_
 void my_sniffer_print_icmp(unsigned char * buffer, message_s message, FILE * log_f);
 void my_sniffer_print_message(message_s message);
 void my_sniffer_print_data(unsigned char * buffer, int data_length, FILE * log_f);
-
+void* my_sniffer_listen_for_input_thread(void *);
+void my_sniffer_handle_input(key_input_e * state_ptr);
+void* my_sniffer_sniffer_thread(void *);
 #endif // MY_SNIFFER_H

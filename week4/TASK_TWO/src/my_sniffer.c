@@ -1,8 +1,10 @@
 #include "my_sniffer.h"
 
 
-bool_e g_listen_to_socket = TRUE;
-int g_message_id = -1;
+_Atomic bool_e g_listen_to_socket = TRUE;
+_Atomic int g_message_id ;
+_Atomic bool_e g_end = FALSE;
+
 
 bool_e my_sniffer_create_socket(void)
 {
@@ -28,9 +30,9 @@ bool_e my_sniffer_create_socket(void)
         }
         else
         {
-            while(g_listen_to_socket)
+            while(g_listen_to_socket && g_end == FALSE)
             {
-                my_sniffer_listn_socket(sock_r, log_file);
+                my_sniffer_listn_socket(sock_r, log_file, log_index_file);
             }
 
             fclose(log_file);
@@ -41,7 +43,7 @@ bool_e my_sniffer_create_socket(void)
     return ret;
 }
 
-bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f)
+bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f, FILE * log_index_f)
 {
     bool_e ret = TRUE;
     int buffer_length;
@@ -59,9 +61,63 @@ bool_e  my_sniffer_listn_socket(int sock_r, FILE * log_f)
     }
     else
     {
+        /* write the starting index of the file to the index log file to find the message later */
+        int start_index = fseek(log_f, 0, SEEK_END);
+        fprintf(index_log_f, "%d\n", start_index);
+        fclose(index_log_f);
+
         my_sniffer_print_ethernet(buffer, log_f);
     }
     return ret;
+}
+
+int my_sniffer_get_message_offset(FILE * log_index_f, int message_id)
+{
+    int counter = 0;
+    int offset = ERROR;
+    while(!feof(log_index_f) && (offset == ERROR))
+    {
+        if(counter == message_id)
+        {
+            fscanf(log_index_f, "%d", &offset);
+        }
+        counter++;
+    }
+    return offset;
+}
+
+void my_sniffer_print_packet(int message_id)
+{
+    FILE * log_f = fopen(LOG_FILE, "r");
+    FILE * log_index_f = fopen(LOG_MESSAGE_INDEX_FILE, "r");
+    if(log_f == NULL || log_index_f == NULL)
+    {
+        perror("my_sniffer_print_packet opening log files\n");
+    }
+    else
+    {
+        int offset = my_sniffer_get_message_offset(log_index_f, message_id);
+        if(offset != ERROR)
+        {
+            fseek(log_f, offset, SEEK_SET);
+            char buffer[PACKET_SIZE] = {0};
+            do
+            {
+                fgets(buffer, PACKET_SIZE, log_f);
+                if(buffer)
+                {
+                    printf("%s", buffer);
+                }
+            } while (buffer && (strcmp(buffer, MESSAGE_END_LINE) != 0));
+        }
+        else
+        {
+            perror("my_sniffer_print_packet: message_id not found\n");
+        }
+
+        fclose(log_f);
+        fclose(log_index_f);
+    }
 }
 
 void my_sniffer_print_ethernet_addr(unsigned char address_arr [ETH_ALEN], FILE * log_f)
@@ -285,9 +341,130 @@ void my_sniffer_print_data(unsigned char * buffer, int data_length, FILE * log_f
     fflush(log_f);
 }
 
+void* my_sniffer_listen_for_input_thread(void *)
+{
+
+    struct termios oldt, newt;
+
+    /* Save terminal settings */
+    tcgetattr(STDIN_FILENO, &oldt);
+
+    /* remove waiting for enter */
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    key_input_e state = ESCAPE;
+    do
+    {
+        my_sniffer_handle_input(&state);
+    } while (!g_end);
+
+
+    /* Restore terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+}
+
+void my_sniffer_handle_input(key_input_e * state_ptr)
+{
+    key_input_e key_input;
+    int id = ERROR;
+
+    switch (*state_ptr)
+    {
+        case START:
+            printf("enter %c to stop siffing\n", STOP);
+            key_input = getchar();
+            if(key_input == STOP)
+            {
+                * state_ptr = STOP;
+                g_listen_to_socket = FALSE;
+            }
+            break;
+        case STOP:
+            printf("enter %c to start sniffing, or %c to inspect\n", START, INSPECT);
+            key_input = getchar();
+            if(key_input == START)
+            {
+                * state_ptr = START;
+                g_listen_to_socket = TRUE;
+            }
+            else if(key_input == INSPECT)
+            {
+                * state_ptr = INSPECT;
+            }
+            break;
+        case INSPECT:
+            printf("enter the number of message u want to inspect, or %c to stop inspecting\n", ESCAPE);
+            while(1)
+            {
+                key_input = getchar();
+                if (key_input >= '0' && key_input <= '9')
+                {
+                    if(id == ERROR)
+                    {
+                        id = 0;
+                    }
+                    id *= 10;
+                    id += key_input - '0';
+                }
+                else if (key_input == ESCAPE)
+                {
+                    * state_ptr = ESCAPE;
+                    break;
+                }
+                else if(id != ERROR)
+                {
+                    my_sniffer_print_packet(id);
+                    id = ERROR;
+                }
+            }
+            break;
+        case ESCAPE:
+            printf("enter %c to start sniffing\n", START);
+            key_input = getchar();
+            if(key_input == START)
+            {
+                g_listen_to_socket = TRUE;
+            }
+            break;
+        default:
+            perror("unknown state\n");
+            break;
+    }
+}
+
+
+void* my_sniffer_sniffer_thread(void *)
+{
+    bool_e exit = FALSE;
+
+    while(g_end == FALSE)
+    {
+        if(g_listen_to_socket == TRUE && exit == FALSE)
+        {
+            exit = my_sniffer_create_socket();
+        }
+        else if(exit == TRUE)
+        {
+            g_end = TRUE;
+            g_listen_to_socket = FALSE;
+            printf("Sniffer stopped.\n");
+        }
+    }
+    return NULL;
+}
 int main()
 {
-    my_sniffer_create_socket();
+    pthread_t input_thread;
+    pthread_t sniffer_thread;
+
+    pthread_create(&input_thread, NULL, my_sniffer_listen_for_input_thread, NULL);
+    pthread_create(&sniffer_thread, NULL, my_sniffer_sniffer_thread, NULL);
+
+    pthread_join(input_thread, NULL);
+    pthread_join(sniffer_thread, NULL);
 
     return 0;
 }

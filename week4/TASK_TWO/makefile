@@ -1,5 +1,5 @@
 CC       = gcc
-CFLAGS   = -Wall -Wextra -std=c99 -g
+CFLAGS   = -Wall -Wextra -std=c11 -g
 TARGET   = my_sniffer
 
 SRCS     = src/my_sniffer.c
