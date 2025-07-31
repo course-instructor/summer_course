@@ -1,7 +1,50 @@
 #define _GNU_SOURCE
 #include <stdio.h>
-
 #include "../include/my_sniffer.h"
+
+extern uint64_t packet_count;
+extern bool is_sniffing;
+
+status sniffer_start()
+{
+    int sock_fd;
+    packet_count = 0;
+    status return_status = SUCCESS;
+
+
+    FILE * tmp_file;
+    FILE * offset_file;
+
+    if((tmp_file = fopen(TEMPORARY_FILE_PATH,"wb")) == NULL)
+    {
+        perror("Error opening file");
+        return_status = FAILURE;
+    }
+    else if((offset_file = fopen(OFFSET_FILE_PATH,"wb")) == NULL)
+    {
+        perror("Error opening file");
+        return_status = FAILURE;
+    }
+    else if(sniffer_create_socket(&sock_fd) == FAILURE)
+    {
+        return_status = FAILURE;
+    }
+    else
+    {
+        while (return_status == SUCCESS && is_sniffing == true)
+        {
+            return_status = sniffer_packet_reader(&sock_fd,tmp_file,offset_file);
+
+        }
+        
+
+    }
+    fclose(tmp_file);
+    fclose(offset_file);
+    close(sock_fd);
+
+    return return_status;
+}
 
 
 status sniffer_create_socket(int * sock_fd)
@@ -17,43 +60,48 @@ status sniffer_create_socket(int * sock_fd)
 
     return return_status;
 }
+
 status sniffer_packet_reception(int sock_fd, uint8_t *buffer, ssize_t * buflen)
 {
     status return_status = SUCCESS;
     struct sockaddr saddr;
 
-    memset(buffer,0,MAX_DATA_SIZE);
     int saddr_len = sizeof (saddr);
-    
+
+    memset(buffer,0,MAX_DATA_SIZE);
+
+
     /*Receive a network packet and copy in to buffer*/
+    
     *buflen = recvfrom(sock_fd,buffer,MAX_DATA_SIZE,0,&saddr,(socklen_t *)&saddr_len);
-    if(*buflen<0)
-    {
-    fprintf(stderr,"Error in reading from recvform function");
-    return_status = FAILURE;
-    }
+    if(*buflen < 0)
+        {
+        fprintf(stderr,"Error in reading from recvform function");
+        return_status = FAILURE;
+        }
+
+
     return return_status;
 }
-status sniffer_packet_reader(int * sock_fd, FILE * output)
+
+
+
+status sniffer_packet_reader(int * sock_fd, FILE * tmp_file , FILE * offset_file)
 {
     uint8_t buffer[MAX_DATA_SIZE];
     ssize_t buflen = 0;
-    u_int16_t iphdrlen = 0;
-
+    uint64_t current_id;
     status return_status = SUCCESS;
-
-
+ 
     if (sniffer_packet_reception(*sock_fd,buffer,&buflen) == FAILURE)
     {
         return_status = FAILURE;
     }
     else
     {
-        sniffer_exract_ethernet_header(buffer,output);
-        sniffer_extract_ip_header(buffer,&iphdrlen,output);
-        sniffer_extract_transport_header(buffer,output);
-        sniffer_extract_data(buffer,buflen,iphdrlen,output);
-
+        current_id = sniffer_save_raw_packet(buffer,buflen, tmp_file, offset_file);
+        sniffer_extract_summery(buffer,current_id);
+        packet_count++; /*increment global packet count*/
     }
     return return_status;
 
@@ -183,8 +231,8 @@ void sniffer_extract_icmp_header(uint8_t *buffer, uint16_t iphdrlen , FILE *outp
     struct icmphdr *icmp = (struct icmphdr*)(buffer + iphdrlen + sizeof(struct ethhdr));
 
     fprintf(output , "ICMP Header\n");
-    fprintf(output , "\t|-Type     : %d\n" , (unsigned int)(icmp->type));
-    fprintf(output , "\t|-Code     : %d\n" , (unsigned int)(icmp->code));
+    fprintf(output , "\t|-Type     : %d\n" , (uint32_t)(icmp->type));
+    fprintf(output , "\t|-Code     : %d\n" , (uint32_t)(icmp->code));
     fprintf(output , "\t|-Checksum : %d\n" , ntohs(icmp->checksum));
     
     if (icmp->type == ICMP_ECHO || icmp->type == ICMP_ECHOREPLY) 
@@ -193,3 +241,112 @@ void sniffer_extract_icmp_header(uint8_t *buffer, uint16_t iphdrlen , FILE *outp
         fprintf(output , "\t|-Sequence Number  : %d\n" , ntohs(icmp->un.echo.sequence));
     }
 }
+uint64_t sniffer_save_raw_packet(uint8_t *buffer,ssize_t buflen, FILE * tmp_file, FILE * offset_file)
+{
+
+    packet_info new_packet_info;
+
+    /*Get info about packet*/
+    new_packet_info.id = packet_count;
+    new_packet_info.packet_size = buflen;
+    new_packet_info.file_offset = ftell(tmp_file);
+
+    /*Write raw packet and packet into*/
+    fwrite(buffer, buflen, 1, tmp_file);
+    fwrite(&new_packet_info,sizeof(packet_info),1,offset_file);
+
+    return packet_count;
+}
+status sniffer_read_packet(uint64_t found_packet_id,FILE * tmp_file, FILE * offset_file, FILE * output )
+{   
+    status return_status = SUCCESS;
+    uint8_t buffer[MAX_DATA_SIZE] = {0};
+    packet_info found_packet_info;
+    u_int16_t iphdrlen = 0;
+    if(found_packet_id >= packet_count) /*Check if bigger then the last added id*/
+    {
+        return_status = FAILURE;
+    }
+    else
+    {
+        /*Get the packet info from offset file*/
+        fseek(offset_file,found_packet_id*sizeof(packet_info),SEEK_SET);
+        fread(&found_packet_info,sizeof(packet_info),1,offset_file);
+
+        /*Get the packet from tmp file using packet_info*/
+        fseek(tmp_file,found_packet_info.file_offset,SEEK_SET);
+        fread(buffer,found_packet_info.packet_size,1,tmp_file);
+
+        /*Format packet*/
+        sniffer_exract_ethernet_header(buffer,output);
+        sniffer_extract_ip_header(buffer,&iphdrlen,output);
+        sniffer_extract_transport_header(buffer,output);
+        sniffer_extract_data(buffer,found_packet_info.packet_size,iphdrlen,output);
+
+        /*Go back to start of file*/
+        rewind(offset_file);
+        rewind(tmp_file);
+
+    }
+    return return_status;
+
+}
+
+void sniffer_extract_summery(uint8_t *buffer, uint64_t packet_id)
+{
+
+    struct iphdr *ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
+    struct sockaddr_in source ={0}, dest = {0};
+    uint16_t iphdrlen = ip->ihl * 4;
+
+    char src_ip[INET_ADDRSTRLEN];
+    char dest_ip[INET_ADDRSTRLEN];
+
+    char *protocol = NULL;
+    uint16_t src_port = 0, dest_port = 0;
+
+    source.sin_family = AF_INET;
+    source.sin_addr.s_addr = ip->saddr;
+
+    dest.sin_family = AF_INET;
+    dest.sin_addr.s_addr = ip->daddr;
+
+    inet_ntop(AF_INET, &(source.sin_addr), src_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(dest.sin_addr), dest_ip, INET_ADDRSTRLEN);
+
+
+    switch (ip->protocol)
+    {
+        case PROTOCOL_TCP_NUM:
+        {
+            struct tcphdr *tcp = (struct tcphdr *)(buffer + sizeof(struct ethhdr) + iphdrlen);
+            src_port = ntohs(tcp->source);
+            dest_port = ntohs(tcp->dest);
+            protocol = "TCP";
+            break;
+        }
+        case PROTOCOL_UDP_NUM:
+        {
+            struct udphdr *udp = (struct udphdr *)(buffer + sizeof(struct ethhdr) + iphdrlen);
+            src_port = ntohs(udp->source);
+            dest_port = ntohs(udp->dest);
+            protocol = "UDP";
+            break;
+        }
+        case PROTOCOL_ICMP_NUM:
+        {
+            protocol = "ICMP";
+            break;
+        }
+        default:
+            protocol = "OTHER";
+            break;
+    }
+
+    printf("[%lu]\t, (%s)\t Packet from (s%s : s%u) to (d%s : d%u)\n",
+           packet_id,
+           protocol,
+           src_ip, src_port,
+           dest_ip, dest_port);
+}
+

@@ -2,9 +2,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -ansi -std=c99
 
 
-SRCS = my_sniffer.c src/sniffer.c
+SRCS = my_sniffer.c src/sniffer.c src/input.c
 OBJS = $(SRCS:.c=.o)
-DEPS = include/my_sniffer.h
+DEPS = include/my_sniffer.h include/globals.h
 
 
 TARGET = sniffer_program
@@ -17,7 +17,7 @@ $(TARGET): $(OBJS)
 
 
 run: $(TARGET)
-	./$(TARGET)
+	sudo ./$(TARGET)
 
 valgrind: $(TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)
