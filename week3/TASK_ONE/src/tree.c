@@ -4,6 +4,8 @@
 
 #include "../headers/tree.h"
 
+#define DEFAULT -1
+
 /**
  * @brief the function checks recursivly if there is a path between two nodes in a tree in the given direction, by going 'backwords' from bottom to top.
  * 
@@ -99,11 +101,11 @@ boolean_e check_input(adjmat mat)
     int fathers;
 
     boolean_e ret = TRUE;
-    int u;
+    int node_index;
 
-    for (u = 0; (u < N) && (ret == TRUE) && (count_roots < 2); u++)
+    for (node_index = 0; (node_index < N) && (ret == TRUE) && (count_roots < 2); node_index++)
     {
-        fathers = count_fathers(mat, u);
+        fathers = count_fathers(mat, node_index);
         if(fathers > 1)
         {
             ret = FALSE;
@@ -111,7 +113,7 @@ boolean_e check_input(adjmat mat)
 
         else if(fathers == 0)
         {
-            if(count_children(mat, u) > 0)
+            if(count_children(mat, node_index) > 0)
             {
                 count_roots++;
             }
@@ -174,7 +176,7 @@ void get_mat(adjmat  mat)
 int get_num(void)
 {
     boolean_e still_reading = TRUE;
-    int num = -1; /* default value */
+    int num = DEFAULT; /* default value */
     char ch;
 
 
@@ -184,7 +186,7 @@ int get_num(void)
         if(ch == '-')
         {
             ch = fgetc(stdin);
-            if(ch == '1' && isspace(fgetc(stdin)) && num == -1) /* exactly -1 was entered */
+            if(ch == '1' && isspace(fgetc(stdin)) && num == DEFAULT) /* exactly -1 was entered */
             {
                 still_reading = FALSE;
             }
@@ -192,12 +194,12 @@ int get_num(void)
             else
             {
                 printf("invalid input, try again\n");
-                num = -1; /* reset num to default */
+                num = DEFAULT; /* reset num to default */
             }
         }
         else if(ch <= '9' && ch >= '0')
         {
-            if(num == -1)
+            if(num == DEFAULT)
             {
                 num = 0;
             }
@@ -206,7 +208,7 @@ int get_num(void)
 
         else if(isspace(ch))
         {
-            if(num != -1) /* space after an input... */
+            if(num != DEFAULT) /* space after an input... */
             {
                 still_reading = FALSE;
             }
@@ -215,7 +217,7 @@ int get_num(void)
         else
         {
             printf("invalid input, try again\n");
-            num = -1; /* reset num to default */
+            num = DEFAUL; /* reset num to default */
         }
     }
     return num;
@@ -250,7 +252,7 @@ int main()
         u = get_num();
         v = get_num();
 
-        if(u == -1 && v == -1)
+        if(u == DEFAUL && v == DEFAUL)
         {
             printf("exiting\n");
             done = TRUE;

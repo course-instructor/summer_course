@@ -7,21 +7,38 @@
 
 #include <../headers/preprocessor.h>
 
+const char COMMENT_CHARS[] = {'/','*'};
+
 /**
- * @brief check if the character is the start of a comment
+ * @brief check if the character is the starting a comment or ending a comment
  *
- * @param chr the last character read that we want to check (check for '/')
- * @param file the file pointer that the second char will be red from (the '*' char)
- * @return boolean_e
+ * @param chr the last character read that we want to check 
+ * @param file the file pointer that the second char will be red from
+ * @return boolean_e TRUE if state changed ERROR if there was an error.
  */
-boolean_e check_comment_start(char chr, FILE *file)
+boolean_e check_comment_state_change(char chr, FILE *file, boolean_e is_start)
 {
     boolean_e ret = FALSE;
-    if (chr == '/')
+    /* the order to cpompare the chars to COMMENT_CHARS */
+    int first, second ;
+
+    if(is_start)
+    {
+        first = 0;
+        second = 1;
+    }
+    else
+    {
+        first = 1;
+        second = 0;
+    }
+
+   
+    if (chr == COMMENT_CHARS[first])
     {
         chr = fgetc(file);
 
-        if (chr == '*')
+        if (chr == COMMENT_CHARS[second])
         {
             ret = TRUE;
         }
@@ -30,41 +47,14 @@ boolean_e check_comment_start(char chr, FILE *file)
 
             if (fseek(file, -1, SEEK_CUR))
             {
-                perror("Error on fseek in check_comment_start");
+                perror("Error on fseek in check_comment_state_change\n");
+                ret = ERROR;
             }
         }
     }
     return ret;
 }
 
-/**
- * @brief  check if the character is the end of a comment
- *
- * @param chr the last character read that we want to check (check for '*')
- * @param file the file pointer that the second char will be red from (the '/' char)
- * @return boolean_e
- */
-boolean_e check_comment_end(char chr, FILE *file)
-{
-    boolean_e ret = FALSE;
-    if (chr == '*')
-    {
-        chr = fgetc(file);
-
-        if (chr == '/')
-        {
-            ret = TRUE;
-        }
-        else
-        {
-            if (fseek(file, -1, SEEK_CUR))
-            {
-                perror("Error on fseek in check_comment_end");
-            }
-        }
-    }
-    return ret;
-}
 
 /**
  * @brief reads the file and writes it without comments to a new file
@@ -73,53 +63,54 @@ boolean_e check_comment_end(char chr, FILE *file)
  *
  * @return char* the name of the new file that was created with the comments removed
  */
-char * remove_comments(char *c_file_name)
+char * remove_comments(char *c_file_name, boolean_e * success)
 {
-    char *c1_file_name = malloc(strlen(c_file_name) + 1);
+    char *c1_file_name = malloc(strnlen(c_file_name, FILE_NAME_LENGTH) + 2);
     FILE *c_file;
     FILE *c1_file;
 
     char chr;
     boolean_e in_comment = FALSE;
 
-    strcpy(c1_file_name, c_file_name);
-    strcat(c1_file_name, "1");
+    strncpy(c1_file_name, c_file_name, strnlen(c1_file_name, FILE_NAME_LENGTH));
+    strncat(c1_file_name, "1",2);
 
     c_file = fopen(c_file_name, "r");
     c1_file = fopen(c1_file_name, "w");
 
+    *success = TRUE;
+
     if (!c_file)
     {
         perror("Error opening c_file\n");
+        *success = FALSE;
     }
 
     else if (!c1_file)
     {
         perror("Error opening c1_file\n");
+        *success = FALSE;
     }
 
     else
     {
         while ((chr = fgetc(c_file)) != EOF)
         {
-            if (!in_comment)
+            boolean_e state_change = check_comment_state_change(chr, c1_file, in_comment);
+
+            if(state_change == TRUE)
             {
-                if (check_comment_start(chr, c_file))
-                {
-                    in_comment = TRUE;
-                }
-                else
-                {
-                    fputc(chr, c1_file);
-                }
+                in_comment = (in_comment)?(FALSE):(TRUE);
+            }
+            else if(state_change == ERROR)
+            {
+                break;
             }
 
-            else
+            /* if not in comment and the state wasn't changed in this instance */
+            if(!in_comment && !state_change)
             {
-                if (check_comment_end(chr, c_file))
-                {
-                    in_comment = FALSE;
-                }
+                fputc(chr, c1_file);
             }
         }
     }
@@ -133,9 +124,12 @@ char * remove_comments(char *c_file_name)
  *
  * @param line the line to check
  * @param ret the header path if exists, otherwise an empty string
+ * 
+ * @return boolean_e TRUE if found include
  */
-void find_header(char *line, char *ret)
+boolean_e preprocessor_check_for_include(char *line, char *ret)
 {
+    boolean_e success = TRUE;
     char file_name[FILE_NAME_LENGTH];
     char temp[FILE_NAME_LENGTH];
 
@@ -144,16 +138,19 @@ void find_header(char *line, char *ret)
         if (!realpath(temp, file_name))
         {
             printf("%s\n", temp);
-            perror("error realpath in find_header");
+            perror("error realpath in preprocessor_check_for_include");
             file_name[0] = '\0';
+            success = ERROR;
         }
     }
     else
     {
         file_name[0] = '\0';
+        success = FALSE;
     }
     strncpy(ret, file_name, FILE_NAME_LENGTH);
     ret[FILE_NAME_LENGTH - 1] = '\0';
+    return(success);
 }
 
 /**
@@ -165,60 +162,64 @@ void find_header(char *line, char *ret)
 void process_header(FILE *c2_file, char *header_path)
 {
     ENTRY entry;
-
-    header_path = strdup(remove_comments(header_path));
-    FILE *header_file = fopen(header_path, "r");
-
-    entry.data = NULL;
-
-    if (!header_file)
+    boolean_e success;
+    header_path = strdup(remove_comments(header_path, &success));
+    if(success ==   TRUE)
     {
-        printf("error opening file: process_header\n");
-    }
-    else
-    {
-        ENTRY * temp;
-        entry.key = strdup(header_path);
-        /* printf("try %s\n", header_path); */
 
-        temp = hsearch(entry, FIND);
+        FILE *header_file = fopen(header_path, "r");
 
-        if (temp == NULL)
+        entry.data = NULL;
+
+        if (!header_file)
         {
-            int *p = malloc(sizeof(int));
-            *p = 1;
-            entry.data = p;
-            hsearch(entry,ENTER);
-            /* printf("new %s\n", header_path); */
-            process_file(c2_file, header_file);
+            printf("error opening file: process_header\n");
         }
         else
         {
-            int * p = (int*)(temp->data);
-            if (*p == 0)
+            ENTRY * temp;
+            entry.key = strdup(header_path);
+            /* printf("try %s\n", header_path); */
+
+            temp = hsearch(entry, FIND);
+
+            if (temp == NULL)
             {
+                int *p = malloc(sizeof(int));
                 *p = 1;
-                /* printf("again %s\n", header_path); */
+                entry.data = p;
+                hsearch(entry,ENTER);
+                /* printf("new %s\n", header_path); */
                 process_file(c2_file, header_file);
             }
             else
             {
-                printf("storm detected! %s\n", header_path);
+                int * p = (int*)(temp->data);
+                if (*p == 0)
+                {
+                    *p = 1;
+                    /* printf("again %s\n", header_path); */
+                    process_file(c2_file, header_file);
+                }
+                else
+                {
+                    printf("storm detected! %s\n", header_path);
+                }
             }
-        }
 
-        fclose(header_file);
+            fclose(header_file);
 
-        temp = hsearch(entry, FIND);
-        if (temp == NULL || temp->data == NULL)
-        {
-            printf("ERROR for %s\n", header_path);
-        }
-        else
-        {
-            int * p = (int*) temp->data;
-            *p = 0;
-            /* printf("done %s\n", temp->key); */
+            temp = hsearch(entry, FIND);
+            if (temp == NULL || temp->data == NULL)
+            {
+                printf("ERROR for %s\n", header_path);
+            }
+            else
+            {
+                int * p = (int*) temp->data;
+                *p = 0;
+                /* printf("done %s\n", temp->key); */
+            }
         }
     }
 }
@@ -240,16 +241,15 @@ void process_file(FILE *c2_file, FILE *input)
 
     while (fgets(line, LINE_LENGTH, input))
     {
-        find_header(line, header_path);
-        /* printf("header: %s\n", header_path); */
-        if (*header_path)
+        boolean_e success = preprocessor_check_for_include(line, header_path);
+        if(success == TRUE)
         {
             process_header(c2_file, header_path);
         }
-        else
+        else if(success == FALSE)
         {
             /* printf("%s", line); */
-            fwrite(line, sizeof(char), strlen(line), c2_file);
+            fwrite(line, sizeof(char), strnlen(line, LINE_LENGTH), c2_file);
         }
     }
     fputc('\n', c2_file);
@@ -261,9 +261,9 @@ void process_file(FILE *c2_file, FILE *input)
  *
  * @param c1_file_name the file to read from
  */
-void turn_c1_to_c2(char *c1_file_name)
+void preprocessor_run(char *c1_file_name)
 {
-    char c2_path[LINE_LENGTH];
+    char c2_path[FILE_NAME_LENGTH];
     FILE *c2_file;
     FILE *c1_file;
 
@@ -273,25 +273,37 @@ void turn_c1_to_c2(char *c1_file_name)
     }
     else
     {
-        strcpy(c2_path, "c2");
-
-        c1_file_name = strdup(remove_comments(c1_file_name));
-        c1_file = fopen(c1_file_name, "r");
-
-
-        c2_file = fopen(c2_path, "w");
-
-        if (!c1_file || !c2_file)
+        boolean_e success;
+        c1_file_name = strdup(remove_comments(c1_file_name, &success));
+        if(success == TRUE)
         {
-            printf("error opening file in storm check\n");
-        }
+                
 
-        else
-        {
-            process_file(c2_file, c1_file);
-        }
+            strncpy(c2_path, c1_file_name, FILE_NAME_LENGTH);
+            int len = strnlen(c2_path, FILE_NAME_LENGTH);
+            if (len > 0 && len < FILE_NAME_LENGTH) 
+            {
+                c2_path[len - 1] = '2';
+                c2_path[len] = '\0';
+            }
 
-        hdestroy();
+            c1_file = fopen(c1_file_name, "r");
+
+
+            c2_file = fopen(c2_path, "w");
+
+            if (!c1_file || !c2_file)
+            {
+                printf("error opening file in storm check\n");
+            }
+
+            else
+            {
+                process_file(c2_file, c1_file);
+            }
+
+            hdestroy();
+        }
     }
 }
 
@@ -305,6 +317,6 @@ int main(int argc, char *argv[])
     }
     c_file_name = argv[1];
 
-    turn_c1_to_c2(c_file_name);
+    preprocessor_run(c_file_name);
     return 0;
 }

@@ -6,18 +6,17 @@
 
 #define HASH_SIZE 500
 /**/
-typedef enum { FALSE, TRUE } boolean_e;
+typedef enum {ERROR = -1, FALSE, TRUE } boolean_e;
 
 
 
-boolean_e check_comment_start(char chr, FILE * file);
-boolean_e check_comment_end(char chr, FILE *file);
-char * remove_comments( char *c_file_name);
+boolean_e check_comment_state_change(char chr, FILE *file, boolean_e is_start);
+char * remove_comments(char *c_file_name, boolean_e * success);
 
-void find_header(char * line, char * ret);
-void process_header(FILE * c2_file,char * header_path);
+boolean_e preprocessor_check_for_include(char *line, char *ret);
+void process_header(FILE *c2_file, char *header_path);
 void process_file(FILE * file, FILE * head);
-void turn_c1_to_c2(char * c1_file_name);
+void preprocessor_run(char * c1_file_name);
 
 
 
