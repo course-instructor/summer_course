@@ -149,6 +149,11 @@ void input_inspect(void)
     FILE *offset_file = NULL;
     bool is_inspect_mode = true;
     uint64_t input_id;
+    struct stat st = {0};
+    if (stat(TEMPORARY_FOLDER_PATH, &st) == -1) 
+    {
+        mkdir(TEMPORARY_FOLDER_PATH, 0700);
+    }
 
     if (is_sniffing)
     {

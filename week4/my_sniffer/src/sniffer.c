@@ -260,8 +260,10 @@ uint64_t sniffer_save_raw_packet(uint8_t *buffer,ssize_t buflen, FILE * tmp_file
     new_packet_info.file_offset = ftell(tmp_file);
 
     /*Write raw packet and packet into*/
-    fwrite(buffer, buflen, 1, tmp_file);
+    fflush(offset_file);
     fwrite(&new_packet_info,sizeof(packet_info),1,offset_file);
+    fflush(tmp_file);
+    fwrite(buffer, buflen, 1, tmp_file);
 
     return packet_count;
 }
