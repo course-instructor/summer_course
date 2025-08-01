@@ -29,6 +29,9 @@
 #define MSG_ERR_OPEN_TMP_FILE     "Error opening tmp file"
 #define MSG_ERR_OPEN_OFFSET_FILE  "Error opening offset file"
 #define MSG_ERR_OPEN_DUMP_FILE    "Error opening dump file"
+#define MSG_ERR_NO_INPUT          "No input"
+#define MSG_ERR_NOT_INTEGER       "Input is not an integer"
+
 
 #define DUMP_FILENAME_FORMAT      "./saves/my_sniffer_(%Y-%m-%d)_(%H:%M:%S).txt"
 
@@ -130,7 +133,6 @@ void input_kill(pthread_t *sniffer_thread)
     {
         is_sniffing = false;
         printf(MSG_STOPPING_SNIFFER);
-        close(5);
         pthread_join(*sniffer_thread, NULL);
         printf(MSG_DONE_SNIFFING);
     }
@@ -187,8 +189,15 @@ void input_inspect(void)
         }
     }
 
-    if (tmp_file != NULL) fclose(tmp_file);
-    if (offset_file != NULL) fclose(offset_file);
+    if (tmp_file != NULL)
+    {
+        fclose(tmp_file);
+    } 
+    if (offset_file != NULL) 
+    {
+        fclose(offset_file);
+
+    }
 }
 
 void input_erase(void)
@@ -240,9 +249,18 @@ void input_dump(void)
             printf(MSG_DATA_SAVED_FMT, dump_file_path);
         }
 
-        if (tmp_file) fclose(tmp_file);
-        if (offset_file) fclose(offset_file);
-        if (dump_file) fclose(dump_file);
+        if (tmp_file  != NULL)
+        {
+            fclose(tmp_file);
+        }
+        if (offset_file  != NULL)
+        {
+            fclose(offset_file);
+        }
+        if (dump_file != NULL)
+        {
+            fclose(dump_file); 
+        } 
     }
 }
 
@@ -272,12 +290,12 @@ status input_get_id(uint64_t *ptr_input_id)
         *ptr_input_id = strtol(buffer, &endptr, 10);
         if (endptr == buffer)
         {
-            printf("No input\n");
+            printf("%s\n",MSG_ERR_NO_INPUT);
             input_status = FAILURE;
         }
         else if (*endptr && *endptr != '\n')
         {
-            printf("input is not an integer\n");
+            printf("%s\n",MSG_ERR_NOT_INTEGER);
             input_status = FAILURE;
         }
     }
