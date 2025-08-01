@@ -8,6 +8,8 @@ bool is_sniffing = false;
 
 int main()
 {
+    
+
     if (geteuid() == 0) 
     {
         input_listener();

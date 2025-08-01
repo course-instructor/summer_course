@@ -22,7 +22,8 @@
 #define PROTOCOL_TCP_NUM 6
 #define PROTOCOL_UDP_NUM 17
 #define PROTOCOL_ICMP_NUM 1
-#define TEMPORARY_FOLDER_PATH "./temporary_files"
+#define SAVED_FOLDER_PATH "saves"
+#define TEMPORARY_FOLDER_PATH "temporary_files"
 #define TEMPORARY_FILE_PATH "./temporary_files/tmp_file.bin"
 #define OFFSET_FILE_PATH "./temporary_files/offset_file.bin"
 

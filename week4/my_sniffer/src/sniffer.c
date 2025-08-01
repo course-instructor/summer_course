@@ -7,13 +7,22 @@ extern bool is_sniffing;
 
 status sniffer_start()
 {
-    int sock_fd;
+    int sock_fd;    
     packet_count = 0;
     status return_status = SUCCESS;
 
 
     FILE * tmp_file = NULL;
     FILE * offset_file = NULL;
+
+    /* creates a folder if dont exists*/
+    struct stat st = {0};
+    mode_t target_mode = 0777;
+    if (stat(TEMPORARY_FOLDER_PATH, &st) == -1) 
+    {
+        mkdir(TEMPORARY_FOLDER_PATH, 0);
+        chmod(TEMPORARY_FOLDER_PATH,target_mode);
+    }
 
     if((tmp_file = fopen(TEMPORARY_FILE_PATH,"wb")) == NULL)
     {

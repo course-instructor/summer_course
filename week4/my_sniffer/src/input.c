@@ -149,11 +149,7 @@ void input_inspect(void)
     FILE *offset_file = NULL;
     bool is_inspect_mode = true;
     uint64_t input_id;
-    struct stat st = {0};
-    if (stat(TEMPORARY_FOLDER_PATH, &st) == -1) 
-    {
-        mkdir(TEMPORARY_FOLDER_PATH, 0700);
-    }
+
 
     if (is_sniffing)
     {
@@ -222,6 +218,15 @@ void input_dump(void)
     time_t rawtime;
     struct tm *timeinfo;
     uint64_t count_id = 0;
+
+    /* creates a folder if dont exists*/
+    struct stat st = {0};
+    mode_t target_mode = 0777;
+    if (stat(SAVED_FOLDER_PATH, &st) == -1) 
+    {
+        mkdir(SAVED_FOLDER_PATH, 0);
+        chmod(SAVED_FOLDER_PATH,target_mode);
+    }
 
     if (packet_count == 0)
     {
