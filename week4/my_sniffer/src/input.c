@@ -1,6 +1,5 @@
 #include <stdio.h>
-#include <termios.h>
-#include "../include/my_sniffer.h"
+#include "my_sniffer.h"
 
 #define START_KEY   's'
 #define KILL_KEY    'k'
@@ -8,8 +7,30 @@
 #define ERASE_KEY   'e'
 #define DUMP_KEY    'd'
 #define HELP_KEY    'h'
+#define ESCAPE_KEY  27
 
-#define ESCAPE_KEY 27
+#define HELP_MESSAGE              "(press h for help!!)"
+#define MSG_STARTING_SNIFFER      "Starting sniffer...\n"
+#define MSG_ALREADY_RUNNING       "Sniffer is already running.\n"
+#define MSG_STOPPING_SNIFFER      "Stopping sniffer...\n"
+#define MSG_DONE_SNIFFING         "Done sniffing\n"
+#define MSG_NOT_RUNNING           "Sniffer is not running currently.\n"
+#define MSG_CANT_INSPECT_RUNNING  "[Can't inspect while still sniffing (press [k] to stop sniffing)]\n"
+#define MSG_ENTER_ID              "Please enter an id of a packet you would like to inspect. (Press ESC to exit INSPECT MODE)\n"
+#define MSG_INSPECT_MODE          "[INSPECT MODE] "
+#define MSG_INVALID_INPUT         "Invalid input\n"
+#define MSG_EXITING_INSPECT       "Exiting Inspect Mode...\n"
+#define MSG_INVALID_ID_FMT        "\nInvalid ID : %ld invalid range\n"
+#define MSG_DATA_ERASED           "Data Erased\n"
+#define MSG_NO_DATA_TO_SAVE       "No data to save.\n"
+#define MSG_DATA_SAVED_FMT        "Data saved at [%s].\n"
+
+#define MSG_ERR_OPENING_FILE      "Error opening file"
+#define MSG_ERR_OPEN_TMP_FILE     "Error opening tmp file"
+#define MSG_ERR_OPEN_OFFSET_FILE  "Error opening offset file"
+#define MSG_ERR_OPEN_DUMP_FILE    "Error opening dump file"
+
+#define DUMP_FILENAME_FORMAT      "./saves/my_sniffer_(%Y-%m-%d)_(%H:%M:%S).txt"
 
 extern uint64_t packet_count;
 extern bool is_sniffing;
@@ -22,35 +43,29 @@ void input_listener(void)
     pthread_t sniffer_thread;
 
     input_terminal_raw_mode_enable();
-    printf("(press h for help!!)\n");
+    printf("%s\n", HELP_MESSAGE);
 
-
-    while((ch = getchar())) 
+    while ((ch = getchar()))
     {
-        if (ch < 0) {
-            if (ferror(stdin)) 
-            { 
+        if (ch < 0)
+        {
+            if (ferror(stdin))
                 break;
-                /* there was an error... */ 
-            }
             clearerr(stdin);
-        } 
-        else 
+        }
+        else
         {
             switch (ch)
             {
             case START_KEY:
                 input_start(&sniffer_thread);
                 break;
-
             case KILL_KEY:
                 input_kill(&sniffer_thread);
                 break;
-            
             case INSPECT_KEY:
                 input_inspect();
                 break;
-
             case ERASE_KEY:
                 input_erase();
                 break;
@@ -60,219 +75,178 @@ void input_listener(void)
             case HELP_KEY:
                 input_help();
                 break;
-            
             default:
                 break;
             }
-
         }
     }
+
+    input_terminal_raw_mode_disable();
 }
 
 void input_help(void)
 {
     printf("\n*** Sniffer Program Commands***\n\n");
-    printf("[%c] Shows this page\n"             ,HELP_KEY);
-    printf("[%c] Starts sniffing\n"             ,START_KEY);
-    printf("[%c] Kill the sniffing process\n"   ,KILL_KEY);
-    printf("[%c] Inspect a specific packet\n"   ,INSPECT_KEY);
-    printf("[%c] Dump the data into a file\n"   ,DUMP_KEY);
-    printf("[%c] Erase the unsaved data\n"      ,ERASE_KEY);
+    printf("[%c] Shows this page\n", HELP_KEY);
+    printf("[%c] Starts sniffing\n", START_KEY);
+    printf("[%c] Kill the sniffing process\n", KILL_KEY);
+    printf("[%c] Inspect a specific packet\n", INSPECT_KEY);
+    printf("[%c] Dump the data into a file\n", DUMP_KEY);
+    printf("[%c] Erase the unsaved data\n", ERASE_KEY);
     printf("\n*******************************\n\n");
-
 }
+
 void input_terminal_raw_mode_enable(void)
 {
     struct termios newt;
-
-    /*tcgetattr gets the parameters of the current terminal
-    STDIN_FILENO will tell tcgetattr that it should write the settings
-    of stdin to oldt*/
-    tcgetattr( STDIN_FILENO, &oldt);
-    /*now the settings will be copied*/
+    tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
-
-    /*ICANON normally takes care that one line at a time will be processed
-    that means it will return if it sees a "\n" or an EOF or an EOL*/
-    newt.c_lflag &= ~(ICANON | ECHO);          
-
-    /*Those new settings will be set to STDIN
-    TCSANOW tells tcsetattr to change attributes immediately. */
-    tcsetattr( STDIN_FILENO, TCSANOW, &newt);
-    
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 }
 
 void input_terminal_raw_mode_disable(void)
 {
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);  /*Restore original settings*/ 
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
-void input_start(pthread_t * sniffer_thread)
+void input_start(pthread_t *sniffer_thread)
 {
-    if(is_sniffing == false)
+    if (!is_sniffing)
     {
         is_sniffing = true;
-        pthread_create(sniffer_thread,NULL,(void*)sniffer_start,NULL);
-        printf("Starting sniffer...\n");
-
+        pthread_create(sniffer_thread, NULL, (void *)sniffer_start, NULL);
+        printf(MSG_STARTING_SNIFFER);
     }
     else
     {
-        printf("Sniffer is alredy runnning.\n");
-
+        printf(MSG_ALREADY_RUNNING);
     }
-
 }
-void input_kill(pthread_t * sniffer_thread)
-{
-    if(is_sniffing == true)
-    {
-        is_sniffing = false; /*Tell thread to finish after next recive*/
-        printf("Stopping sniffer...\n");
-        close(5);
-        pthread_join(*sniffer_thread,NULL); /*wait until thread finished*/
-        printf("Done sniffing\n");
 
+void input_kill(pthread_t *sniffer_thread)
+{
+    if (is_sniffing)
+    {
+        is_sniffing = false;
+        printf(MSG_STOPPING_SNIFFER);
+        close(5);
+        pthread_join(*sniffer_thread, NULL);
+        printf(MSG_DONE_SNIFFING);
     }
     else
     {
-        printf("Sniffer is not runnning currently.\n");
+        printf(MSG_NOT_RUNNING);
     }
-
 }
 
 void input_inspect(void)
 {
-
     status input_status = SUCCESS;
-    FILE * tmp_file = NULL;
-    FILE * offset_file = NULL;
+    FILE *tmp_file = NULL;
+    FILE *offset_file = NULL;
     bool is_inspect_mode = true;
     uint64_t input_id;
 
-    if(is_sniffing == true)
+    if (is_sniffing)
     {
-        printf("[Can't inspect while still sniffing (press [%c] to stop sniffing)]\n",KILL_KEY);
+        printf(MSG_CANT_INSPECT_RUNNING);
     }
-    else if((tmp_file = fopen(TEMPORARY_FILE_PATH,"rb")) == NULL)
+    else if ((tmp_file = fopen(TEMPORARY_FILE_PATH, "rb")) == NULL)
     {
-        perror("Error opening file");
+        perror(MSG_ERR_OPENING_FILE);
     }
-    else if((offset_file = fopen(OFFSET_FILE_PATH,"rb")) == NULL)
+    else if ((offset_file = fopen(OFFSET_FILE_PATH, "rb")) == NULL)
     {
-        perror("Error opening file");
-
+        perror(MSG_ERR_OPENING_FILE);
     }
     else
     {
-
-        printf("Plase enter an id of a packt you would like to inspect. (Press ESC to exit INSPECT MODE)\n");
-        while(is_inspect_mode == true)
+        printf(MSG_ENTER_ID);
+        while (is_inspect_mode)
         {
-            printf("[INSPECT MODE] ");
+            printf(MSG_INSPECT_MODE);
             input_status = input_get_id(&input_id);
-            if(input_status == FAILURE)
-            {
-                printf("inavild input\n");
 
-            }
-            else if(input_status == DISCONNECTED)
+            if (input_status == FAILURE)
             {
-                printf("Exiting Inspect Mode...\n");
+                printf(MSG_INVALID_INPUT);
+            }
+            else if (input_status == DISCONNECTED)
+            {
+                printf(MSG_EXITING_INSPECT);
                 is_inspect_mode = false;
-
             }
-            else if(input_status == SUCCESS)
+            else if (input_status == SUCCESS)
             {
-                if(sniffer_read_packet(input_id,tmp_file,offset_file,stdout)== FAILURE)
+                if (sniffer_read_packet(input_id, tmp_file, offset_file, stdout) == FAILURE)
                 {
-                    fprintf(stderr,"\nInavlid ID : %ld invalid range\n",input_id);
-                }    
+                    fprintf(stderr, MSG_INVALID_ID_FMT, input_id);
+                }
             }
         }
-
-    }
-    if(tmp_file != NULL)
-    {
-        fclose(tmp_file);
-    }
-    if(offset_file != NULL)
-    {
-        fclose(offset_file);
     }
 
-
+    if (tmp_file != NULL) fclose(tmp_file);
+    if (offset_file != NULL) fclose(offset_file);
 }
+
 void input_erase(void)
-{   
-
+{
     packet_count = 0;
-
     fclose(fopen(OFFSET_FILE_PATH, "wb"));
     fclose(fopen(TEMPORARY_FILE_PATH, "wb"));
-    printf("Data Erased\n");
-    
-
-
-    
-
-
+    printf(MSG_DATA_ERASED);
 }
 
 void input_dump(void)
 {
-    FILE * tmp_file;
-    FILE * offset_file;
-    FILE * dump_file;
+    FILE *tmp_file;
+    FILE *offset_file;
+    FILE *dump_file;
     char dump_file_path[FILENAME_MAX] = {0};
-
     time_t rawtime;
-    struct tm * timeinfo;
+    struct tm *timeinfo;
     uint64_t count_id = 0;
 
-    if(packet_count == 0) /* Check if there any packets in temporery file*/
+    if (packet_count == 0)
     {
-        printf("No data to save.\n");
+        printf(MSG_NO_DATA_TO_SAVE);
     }
     else
     {
-        /* get time */
-        time ( &rawtime );
-        timeinfo = localtime ( &rawtime );
-        /*Format dump file name*/
-        strftime(dump_file_path, FILENAME_MAX, "./saves/my_sniffer_(%Y-%m-%d)_(%H:%M:%S).txt", timeinfo);
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        strftime(dump_file_path, FILENAME_MAX, DUMP_FILENAME_FORMAT, timeinfo);
 
-        if((tmp_file = fopen(TEMPORARY_FILE_PATH,"rb")) == NULL)
+        if ((tmp_file = fopen(TEMPORARY_FILE_PATH, "rb")) == NULL)
         {
-            perror("Error opening tmp file");
+            perror(MSG_ERR_OPEN_TMP_FILE);
         }
-        else if((offset_file = fopen(OFFSET_FILE_PATH,"rb")) == NULL)
+        else if ((offset_file = fopen(OFFSET_FILE_PATH, "rb")) == NULL)
         {
-            perror("Error opening offset file");
+            perror(MSG_ERR_OPEN_OFFSET_FILE);
         }
-        else if((dump_file = fopen(dump_file_path,"w")) == NULL)
+        else if ((dump_file = fopen(dump_file_path, "w")) == NULL)
         {
-            perror("Error opening dump file");
+            perror(MSG_ERR_OPEN_DUMP_FILE);
         }
         else
         {
-            while(sniffer_read_packet(count_id,tmp_file,offset_file,dump_file) == SUCCESS)
+            while (sniffer_read_packet(count_id, tmp_file, offset_file, dump_file) == SUCCESS)
             {
                 count_id++;
             }
-            printf("Data saved at [%s].\n",dump_file_path);
+            printf(MSG_DATA_SAVED_FMT, dump_file_path);
         }
-        fclose(tmp_file);
-        fclose(offset_file);
-        fclose(dump_file);
-        
-    }
-    
 
+        if (tmp_file) fclose(tmp_file);
+        if (offset_file) fclose(offset_file);
+        if (dump_file) fclose(dump_file);
+    }
 }
 
-
-status input_get_id(uint64_t * ptr_input_id)
+status input_get_id(uint64_t *ptr_input_id)
 {
     char buffer[BUFSIZ] = {0};
     char *endptr;
@@ -280,42 +254,33 @@ status input_get_id(uint64_t * ptr_input_id)
     int offset = 0;
     status input_status = SUCCESS;
 
-
-
-    while(input_status != DISCONNECTED && (ch = fgetc(stdin)) != '\n')
+    while (input_status != DISCONNECTED && (ch = fgetc(stdin)) != '\n')
     {
-        
-        if(ch == ESCAPE_KEY) /* For exiting from inspect mode even mid writing an input, there is a small downside tho, I cant use backspace*/
+        if (ch == ESCAPE_KEY)
         {
             input_status = DISCONNECTED;
         }
         else
         {
-            printf("%c",ch);
-            buffer[offset] = ch;
-            offset++;
+            printf("%c", ch);
+            buffer[offset++] = ch;
         }
-
     }
-    if(input_status == SUCCESS)
+
+    if (input_status == SUCCESS)
     {
         *ptr_input_id = strtol(buffer, &endptr, 10);
         if (endptr == buffer)
         {
-            // no character was read
             printf("No input\n");
             input_status = FAILURE;
         }
-        if (*endptr && *endptr != '\n')
+        else if (*endptr && *endptr != '\n')
         {
-            /* *endptr is neither end of string nor newline,
-            so we didn't convert the *whole* input*/
             printf("input is not an integer\n");
             input_status = FAILURE;
         }
-
     }
-    return input_status;
-    
 
+    return input_status;
 }

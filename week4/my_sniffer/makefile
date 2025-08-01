@@ -1,10 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -ansi -std=c99
+CFLAGS = -I./include -Wall -Wextra -g -ansi -std=c99
 
 
 SRCS = my_sniffer.c src/sniffer.c src/input.c
 OBJS = $(SRCS:.c=.o)
-DEPS = include/my_sniffer.h include/globals.h
 
 
 TARGET = sniffer_program

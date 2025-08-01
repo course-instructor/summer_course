@@ -9,12 +9,12 @@
 #include <time.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <termios.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <poll.h>
 #define MAX_DATA_SIZE 65536
 #define PROTOCOL_TCP_NUM 6
 #define PROTOCOL_UDP_NUM 17
@@ -32,6 +32,7 @@ typedef enum status_e
     DISCONNECTED = -2
 }status;
 
+/*Packet info that is saved in offset file, used to locate and read packets from tmp_file*/
 typedef struct packet_info_s
 {
     uint64_t id;
@@ -191,6 +192,12 @@ void input_terminal_raw_mode_enable(void);
  */
 void input_help(void);
 
+/**
+ * @brief Gets ID from users input
+ * @param ptr_input_id pointer that saves user's choosen id
+ * @return SUCCSESS if valid input , otherwise if inavlid returns FAILURE
+ * 
+ */
 status input_get_id(uint64_t * ptr_input_id);
 
 

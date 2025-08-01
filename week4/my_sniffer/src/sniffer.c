@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
-#include "../include/my_sniffer.h"
+#include "my_sniffer.h"
 
 extern uint64_t packet_count;
 extern bool is_sniffing;
@@ -12,8 +12,8 @@ status sniffer_start()
     status return_status = SUCCESS;
 
 
-    FILE * tmp_file;
-    FILE * offset_file;
+    FILE * tmp_file = NULL;
+    FILE * offset_file = NULL;
 
     if((tmp_file = fopen(TEMPORARY_FILE_PATH,"wb")) == NULL)
     {
@@ -39,8 +39,16 @@ status sniffer_start()
         
 
     }
-    fclose(tmp_file);
-    fclose(offset_file);
+    if(tmp_file != NULL)
+    {
+        fclose(tmp_file);
+
+    }
+    else if(offset_file != NULL)
+    {
+        fclose(offset_file);
+    }
+
     close(sock_fd);
 
     return return_status;
