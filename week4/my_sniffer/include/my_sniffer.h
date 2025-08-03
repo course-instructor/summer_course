@@ -208,6 +208,6 @@ status input_get_id(uint64_t * ptr_input_id);
  * @brief clean function that frees memory on interrupt signal, thus avoiding memmory leaks
  * @param signo signal number
  */
-static void catch_function(int signo);
+void catch_function(int signo);
 
 #endif

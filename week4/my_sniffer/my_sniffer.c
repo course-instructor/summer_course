@@ -22,7 +22,7 @@ int main()
     return 0;
     
 }
-static void catch_function(int signo) 
+void catch_function(int signo) 
 {
     if(signo == SIGINT)
     {
