@@ -7,6 +7,7 @@
 #define ERASE_KEY   'e'
 #define DUMP_KEY    'd'
 #define HELP_KEY    'h'
+#define QUTT_KEY    'q'
 #define ESCAPE_KEY  27
 
 #define HELP_MESSAGE              "(press h for help!!)"
@@ -37,18 +38,19 @@
 
 extern uint64_t packet_count;
 extern bool is_sniffing;
+extern pthread_t sniffer_thread;
+
 
 static struct termios oldt;
 
 void input_listener(void)
 {
     int ch;
-    pthread_t sniffer_thread;
 
     input_terminal_raw_mode_enable();
     printf("%s\n", HELP_MESSAGE);
 
-    while ((ch = getchar()))
+    while ((ch = getchar()) != QUTT_KEY)
     {
         if (ch < 0)
         {
@@ -61,10 +63,10 @@ void input_listener(void)
             switch (ch)
             {
             case START_KEY:
-                input_start(&sniffer_thread);
+                input_start();
                 break;
             case KILL_KEY:
-                input_kill(&sniffer_thread);
+                input_kill();
                 break;
             case INSPECT_KEY:
                 input_inspect();
@@ -85,6 +87,8 @@ void input_listener(void)
     }
 
     input_terminal_raw_mode_disable();
+    is_sniffing = false;
+    pthread_join(sniffer_thread,NULL);
 }
 
 void input_help(void)
@@ -96,6 +100,7 @@ void input_help(void)
     printf("[%c] Inspect a specific packet\n", INSPECT_KEY);
     printf("[%c] Dump the data into a file\n", DUMP_KEY);
     printf("[%c] Erase the unsaved data\n", ERASE_KEY);
+    printf("[%c] Quit the program.", QUTT_KEY);
     printf("\n*******************************\n\n");
 }
 
@@ -113,12 +118,12 @@ void input_terminal_raw_mode_disable(void)
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
-void input_start(pthread_t *sniffer_thread)
+void input_start(void)
 {
     if (!is_sniffing)
     {
         is_sniffing = true;
-        pthread_create(sniffer_thread, NULL, (void *)sniffer_start, NULL);
+        pthread_create(&sniffer_thread, NULL, (void *)sniffer_start, NULL);
         printf(MSG_STARTING_SNIFFER);
     }
     else
@@ -127,13 +132,13 @@ void input_start(pthread_t *sniffer_thread)
     }
 }
 
-void input_kill(pthread_t *sniffer_thread)
+void input_kill(void)
 {
     if (is_sniffing)
     {
         is_sniffing = false;
         printf(MSG_STOPPING_SNIFFER);
-        pthread_join(*sniffer_thread, NULL);
+        pthread_join(sniffer_thread, NULL);
         printf(MSG_DONE_SNIFFING);
     }
     else

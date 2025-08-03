@@ -5,6 +5,7 @@
 extern uint64_t packet_count;
 extern bool is_sniffing;
 
+
 status sniffer_start()
 {
     int sock_fd;    
@@ -50,10 +51,11 @@ status sniffer_start()
     }
     if(tmp_file != NULL)
     {
+
         fclose(tmp_file);
 
     }
-    else if(offset_file != NULL)
+    if(offset_file != NULL)
     {
         fclose(offset_file);
     }
@@ -269,10 +271,12 @@ uint64_t sniffer_save_raw_packet(uint8_t *buffer,ssize_t buflen, FILE * tmp_file
     new_packet_info.file_offset = ftell(tmp_file);
 
     /*Write raw packet and packet into*/
-    fflush(offset_file);
     fwrite(&new_packet_info,sizeof(packet_info),1,offset_file);
-    fflush(tmp_file);
+    fflush(offset_file);
+
     fwrite(buffer, buflen, 1, tmp_file);
+    fflush(tmp_file);
+
 
     return packet_count;
 }

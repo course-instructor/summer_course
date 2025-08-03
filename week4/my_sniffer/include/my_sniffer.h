@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
+#include <stdlib.h>
 #define MAX_DATA_SIZE 65536
 #define PROTOCOL_TCP_NUM 6
 #define PROTOCOL_UDP_NUM 17
@@ -161,14 +163,12 @@ void input_listener(void);
 
 /**
  * @brief Starts a thread of sniffing proccess
- * @param sniffer_thread thread to create
  */
-void input_start(pthread_t * sniffer_thread);
+void input_start(void);
 /**
  * @brief Kills a thread of sniffing proccess
- * @param sniffer_thread thread to kill
  */
-void input_kill(pthread_t * sniffer_thread);
+void input_kill(void);
 
 /**
  * @brief Foramt raw packet into by user's specified id.
@@ -204,6 +204,10 @@ void input_help(void);
  * 
  */
 status input_get_id(uint64_t * ptr_input_id);
-
+/**
+ * @brief clean function that frees memory on interrupt signal, thus avoiding memmory leaks
+ * @param signo signal number
+ */
+static void catch_function(int signo);
 
 #endif
