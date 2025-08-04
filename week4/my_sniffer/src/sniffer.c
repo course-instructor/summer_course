@@ -4,17 +4,27 @@
 
 extern uint64_t packet_count;
 extern bool is_sniffing;
+extern pthread_t reception_thread;
 
+typedef struct thread_args_s
+{
+    int sock_fd;
+    ssize_t buflen;
+    uint8_t * buffer;
+
+}thread_args;
 
 status sniffer_start()
 {
+
     int sock_fd;    
-    packet_count = 0;
     status return_status = SUCCESS;
 
+    int s;
 
     FILE * tmp_file = NULL;
     FILE * offset_file = NULL;
+    
 
     /* creates a folder if dont exists*/
     struct stat st = {0};
@@ -24,6 +34,9 @@ status sniffer_start()
         mkdir(TEMPORARY_FOLDER_PATH, 0);
         chmod(TEMPORARY_FOLDER_PATH,target_mode);
     }
+
+    packet_count = 0;
+
 
     if((tmp_file = fopen(TEMPORARY_FILE_PATH,"wb")) == NULL)
     {
@@ -41,14 +54,15 @@ status sniffer_start()
     }
     else
     {
+
+
         while (return_status == SUCCESS && is_sniffing == true)
         {
             return_status = sniffer_packet_reader(&sock_fd,tmp_file,offset_file);
-
         }
         
-
     }
+
     if(tmp_file != NULL)
     {
 
@@ -70,7 +84,7 @@ status sniffer_create_socket(int * sock_fd)
 {
     status return_status = SUCCESS;
 
-    *sock_fd=socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL));
+    *sock_fd = socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL));
     if(*sock_fd<0)
     {
         fprintf(stderr,"error in sockets\n");
@@ -89,37 +103,57 @@ status sniffer_packet_reception(int sock_fd, uint8_t *buffer, ssize_t * buflen)
 
     memset(buffer,0,MAX_DATA_SIZE);
 
-
     /*Receive a network packet and copy in to buffer*/
-    
     *buflen = recvfrom(sock_fd,buffer,MAX_DATA_SIZE,0,&saddr,(socklen_t *)&saddr_len);
     if(*buflen < 0)
-        {
+    {
         fprintf(stderr,"Error in reading from recvform function");
         return_status = FAILURE;
-        }
+    }
 
 
     return return_status;
 }
 
+status sniffer_recv_thread(void * args)
+{
+    status s;
+    thread_args * recv_args = (thread_args *) args;
+    s = sniffer_packet_reception(recv_args->sock_fd,recv_args->buffer,&recv_args->buflen);
+
+    return s;
+}
 
 
 status sniffer_packet_reader(int * sock_fd, FILE * tmp_file , FILE * offset_file)
 {
     uint8_t buffer[MAX_DATA_SIZE];
-    ssize_t buflen = 0;
     uint64_t current_id;
     status return_status = SUCCESS;
- 
-    if (sniffer_packet_reception(*sock_fd,buffer,&buflen) == FAILURE)
+    thread_args args;
+    args.sock_fd = *sock_fd;
+    args.buflen =0;
+    args.buffer = buffer;
+
+
+    if(pthread_create(&reception_thread,NULL,(void *) sniffer_recv_thread,(void *)&args) == FAILURE)
+    {
+        return_status = FAILURE;
+        fprintf(stderr , "Faild to create a thread");
+    }
+    else if(pthread_join(reception_thread,(void*)&return_status) != SUCCESS)
+    {
+        return_status = FAILURE;
+        printf("FAILED TO JOIN\n");
+    }
+    else if (is_sniffing == false)
     {
         return_status = FAILURE;
     }
     else
     {
-        current_id = sniffer_save_raw_packet(buffer,buflen, tmp_file, offset_file);
-        sniffer_extract_summery(buffer,current_id);
+        current_id = sniffer_save_raw_packet(args.buffer,args.buflen, tmp_file, offset_file);
+        sniffer_extract_summery(args.buffer,current_id);
         packet_count++; /*increment global packet count*/
     }
     return return_status;
@@ -263,7 +297,7 @@ void sniffer_extract_icmp_header(uint8_t *buffer, uint16_t iphdrlen , FILE *outp
 uint64_t sniffer_save_raw_packet(uint8_t *buffer,ssize_t buflen, FILE * tmp_file, FILE * offset_file)
 {
 
-    packet_info new_packet_info;
+    packet_info new_packet_info = {0};
 
     /*Get info about packet*/
     new_packet_info.id = packet_count;
@@ -273,9 +307,10 @@ uint64_t sniffer_save_raw_packet(uint8_t *buffer,ssize_t buflen, FILE * tmp_file
     /*Write raw packet and packet into*/
     fwrite(&new_packet_info,sizeof(packet_info),1,offset_file);
     fflush(offset_file);
-
     fwrite(buffer, buflen, 1, tmp_file);
     fflush(tmp_file);
+
+
 
 
     return packet_count;

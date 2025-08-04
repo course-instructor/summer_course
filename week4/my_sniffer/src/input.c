@@ -38,7 +38,10 @@
 
 extern uint64_t packet_count;
 extern bool is_sniffing;
+extern bool is_inspect_mode;
+extern bool is_running;
 extern pthread_t sniffer_thread;
+extern pthread_t reception_thread;
 
 
 static struct termios oldt;
@@ -46,11 +49,11 @@ static struct termios oldt;
 void input_listener(void)
 {
     int ch;
-
+    is_running = true;
     input_terminal_raw_mode_enable();
     printf("%s\n", HELP_MESSAGE);
 
-    while ((ch = getchar()) != QUTT_KEY)
+    while ((ch = getchar()) != QUTT_KEY && is_running == true)
     {
         if (ch < 0)
         {
@@ -88,7 +91,7 @@ void input_listener(void)
 
     input_terminal_raw_mode_disable();
     is_sniffing = false;
-    pthread_join(sniffer_thread,NULL);
+    pthread_cancel(reception_thread);
 }
 
 void input_help(void)
@@ -138,6 +141,7 @@ void input_kill(void)
     {
         is_sniffing = false;
         printf(MSG_STOPPING_SNIFFER);
+        pthread_cancel(reception_thread);
         pthread_join(sniffer_thread, NULL);
         printf(MSG_DONE_SNIFFING);
     }
@@ -152,7 +156,7 @@ void input_inspect(void)
     status input_status = SUCCESS;
     FILE *tmp_file = NULL;
     FILE *offset_file = NULL;
-    bool is_inspect_mode = true;
+    is_inspect_mode = true;
     uint64_t input_id;
 
 
@@ -202,7 +206,6 @@ void input_inspect(void)
     if (offset_file != NULL) 
     {
         fclose(offset_file);
-
     }
 }
 

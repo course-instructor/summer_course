@@ -210,4 +210,6 @@ status input_get_id(uint64_t * ptr_input_id);
  */
 void catch_function(int signo);
 
+status sniffer_recv_thread(void * args);
+
 #endif
