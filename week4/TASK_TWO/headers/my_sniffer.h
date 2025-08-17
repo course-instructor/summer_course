@@ -80,7 +80,7 @@ typedef struct
 bool_e my_sniffer_create_and_listen_socket(void);
 
 /**
- * @brief
+ * @brief the function is resonsible for getting the raw bytes from the socket and writing the index of the currser into the log index file before writing the message into the log file
  *
  * @param sock_r the socket
  * @param log_f the file to write the formatted packets to
