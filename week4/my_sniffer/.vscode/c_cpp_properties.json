@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include",
+                "/usr/local/include",
+                "${workspaceFolder}/FAKE_INCLUDES",
+                "/usr/include/linux",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include/netinet",
+                "/usr/include/net"
+            ],
+
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
