@@ -1,0 +1,3 @@
+Please note that we use stdint.h for uint(size)_t
+we use low_case_with_snake_case
+and count argc and void * argv...
